@@ -1,0 +1,268 @@
+from selenium import webdriver
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, UnexpectedAlertPresentException, NoSuchFrameException
+from selenium.webdriver.chrome.options import Options
+from datetime import time, timedelta, datetime
+from time import sleep
+import pandas as pd
+import os
+import glob
+import shutil
+import logging
+
+#Desactivar algunos warning en la terminal
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+#Crea un Log de erroes
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+file_handler = logging.FileHandler("errores.log")
+stream_handler = logging.StreamHandler()
+
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
+
+
+def getDriver():
+    current_dir = os.getcwd()
+    driver_dir = f"{current_dir}\\driver\\chromedriver"
+    chromedriver = driver_dir
+    options = webdriver.ChromeOptions() 
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    driver= webdriver.Chrome(executable_path=chromedriver,options=options)
+    return driver
+
+def encontrarElemento(driver,buscarPor,textoBuscado,accion, textoAEscribir= '',primeroBorrar= False):
+    # print(f'{buscarPor}, {textoBuscado}, {accion}, {textoAEscribir}')
+    elemento = None
+    wait = WebDriverWait(driver,10)
+    condicion = EC.presence_of_element_located((buscarPor,textoBuscado))
+    inicio = datetime.now()
+    while datetime.now() - inicio <= timedelta(seconds=10):
+        try:
+            elemento = wait.until(condicion)
+        except (TimeoutException, NoSuchElementException, UnexpectedAlertPresentException) as e:
+            print(f"Error {e}")
+        else:            
+            
+            match accion:
+                case 'escribir':
+                    if(primeroBorrar):
+                        elemento.clear()
+                    elemento.send_keys(textoAEscribir)
+                case 'click':
+                    elemento.click()
+                                
+        finally:
+            return elemento
+        
+def descargarColasTramoMasVoz(horaInicio:time, fechaInicio=datetime.today().date()):
+    finalizadoOk = False
+    url = 'https://manager.masvoz.es/'
+    user = 'vy_konecta_sup01'
+    password = 'Konecta27!'
+
+    segundosDeEspera = 1
+
+    fechaInicioFiltro = fechaInicio
+    strFechaInicioFiltro = fechaInicioFiltro.strftime("%d-%m-%Y")
+    
+    fechaFinFiltro = fechaInicio
+    strFechaFinFiltro = fechaFinFiltro.strftime("%d-%m-%Y")
+
+    horaInicio = horaInicio
+    strhoraInicio = horaInicio.strftime("%H:%M:%S")
+    tiempo_a_sumar = timedelta(minutes=29, seconds=59)
+    fechaHoraInicio = datetime.combine(fechaInicioFiltro,horaInicio)
+
+    horaFin = fechaHoraInicio + tiempo_a_sumar
+    horaFin = horaFin.time()
+    strhoraFin = horaFin.strftime("%H:%M:%S")
+
+    driver = getDriver()
+    driver.minimize_window()
+    # driver.set_window_position(x=-10000, y=-10000)
+    driver.get(url)
+
+    name_elemento = 'user'
+    print(f'Escribo el usuario: {user}')
+    elemento = encontrarElemento(driver = driver, buscarPor= By.NAME, textoBuscado= name_elemento, accion= 'escribir', textoAEscribir= user)
+
+    name_elemento = 'password'
+    print(f'Escribo el password: {password}')
+    elemento = encontrarElemento(driver = driver, buscarPor= By.NAME, textoBuscado= name_elemento, accion= 'escribir', textoAEscribir= password)
+
+    ruta_elemento = '/html/body/div[5]/div[2]/form[1]/fieldset/button'
+    print('Hago click en Entrar')
+    elemento = encontrarElemento(driver= driver, buscarPor= By.XPATH, textoBuscado= ruta_elemento, accion= 'click')
+
+    sleep(segundosDeEspera)
+    ruta_elemento = '/html/body/div[12]/div[3]/button[2]'
+    print('Hago click en Aceptar en ventana superpuesta')
+    elemento = encontrarElemento(driver= driver, buscarPor= By.XPATH, textoBuscado= ruta_elemento, accion= 'click')
+
+    sleep(segundosDeEspera)
+    ruta_elemento = '/html/body/div[10]/div[2]/div/div/div/div/ul/li[10]/a/p[2]'
+    print('Hago clic en Icono Estadistica')
+    elemento = encontrarElemento(driver= driver, buscarPor= By.XPATH, textoBuscado= ruta_elemento, accion= 'click')
+
+    sleep(segundosDeEspera)
+    try:
+        driver.switch_to.frame(1)
+        print('Entro al Iframe para poder seguir buscando elemento que están dentro del Iframe')
+    except NoSuchFrameException:
+        return finalizadoOk
+        
+        
+
+    class_elemento = 'a_tab_colas'
+    print('Selecciono pestaña cola')
+    elemento = encontrarElemento(driver= driver, buscarPor= By.CLASS_NAME, textoBuscado= class_elemento,accion= 'click')
+
+    if(fechaInicio!=datetime.today().date()):
+        id_elemento = 'stime'
+        print(f'Selecciono Periodo Inicio: {str(strFechaInicioFiltro)}')
+        elemento = encontrarElemento(driver= driver, buscarPor= By.ID, textoBuscado= id_elemento, accion= 'escribir', textoAEscribir=str(strFechaInicioFiltro), primeroBorrar=True)
+
+        sleep(segundosDeEspera)
+        ruta_elemento = '/html/body/div[6]/div[2]/div[2]/div'
+        print('Oculto Ventana Fecha Periodo desde')
+        elemento = encontrarElemento(driver= driver, buscarPor= By.XPATH, textoBuscado= ruta_elemento, accion='click')
+
+        sleep(segundosDeEspera)
+        id_elemento = 'etime'
+        print(f'Selecciono Periodo hasta: {str(strFechaFinFiltro)}')
+        elemento = encontrarElemento(driver= driver, buscarPor= By.ID, textoBuscado= id_elemento, accion= 'escribir', textoAEscribir= str(strFechaFinFiltro), primeroBorrar=True)
+
+        sleep(segundosDeEspera)
+        ruta_elemento = '/html/body/div[6]/div[2]/div[2]/div'
+        print('Oculto Ventana Fecha Periodo desde')
+        elemento = encontrarElemento(driver= driver, buscarPor= By.XPATH, textoBuscado= ruta_elemento, accion='click')
+
+
+    sleep(segundosDeEspera)
+    ruta_elemento = '/html/body/div[6]/div[10]/div/div[6]/div/div[1]/div[1]/div/button'
+    print('Hago clic en agrupado por')
+    elemento = encontrarElemento(driver= driver, buscarPor= By.XPATH, textoBuscado= ruta_elemento, accion='click')
+
+    class_elemento = 'Cola'
+    print('Hago clic en Franjas de 30 minutos')
+    elemento = encontrarElemento(driver= driver, buscarPor= By.LINK_TEXT, textoBuscado= class_elemento, accion='click')
+
+    id_elemento = 'int_timepicker_a_4'
+    print(f'Escribo Tramo inicial: {strhoraInicio}')
+    elemento = encontrarElemento(driver= driver, buscarPor= By.ID, textoBuscado= id_elemento, accion='escribir', textoAEscribir=strhoraInicio, primeroBorrar=True)
+
+    id_elemento = 'int_timepicker_b_4'
+    print(f'Escribo Tramo final: {strhoraFin}')
+    elemento = encontrarElemento(driver= driver, buscarPor= By.ID, textoBuscado= id_elemento, accion='escribir', textoAEscribir=strhoraFin, primeroBorrar=True)
+
+    ruta_elemento = '/html/body/div[6]/div[2]/div[3]/div/div[3]/button'
+    print('Empieza a buscar')
+    elemento = encontrarElemento(driver= driver, buscarPor= By.XPATH, textoBuscado= ruta_elemento, accion='click')
+
+    ruta_elemento = '/html/body/div[6]/div[10]/div/div[6]/div/div[1]/div[4]/a[1]'
+    print('Exporto en CSV')
+    elemento = encontrarElemento(driver= driver, buscarPor= By.XPATH, textoBuscado= ruta_elemento, accion='click')
+
+    print('Espero 10 segundo, para que termine de exportar')
+    sleep(10)
+    finalizadoOk = True
+    return finalizadoOk
+
+def encontrarUltimoArchivo(nombreArchivoBuscado='',rutaDescarga='',extension='csv'):
+    home = os.path.expanduser("~")
+    if(rutaDescarga==''):rutaDescarga=os.path.join(home, "Downloads")
+    listaDeArchivos = glob.glob(f"{rutaDescarga}\\{nombreArchivoBuscado}*.{extension}") # * means all if need specific format then *.csv
+    if(listaDeArchivos):
+        ultimoArchivo = max(listaDeArchivos, key=os.path.getctime)
+        return ultimoArchivo
+    else:
+        print(f'Archivo {rutaDescarga}\\{nombreArchivoBuscado}*.{extension} no encontrado')
+        return None
+
+def copiarArchivo(nombreArchivo,nombreArchivoFinal:str,rutaDestino:str):
+    shutil.copy(nombreArchivo, f"{rutaDestino}\\{nombreArchivoFinal}")
+    print(f'Archivo {os.path.basename(nombreArchivo)} movido a {rutaDestino}\\{nombreArchivoFinal}')
+    
+def moverArchivo(nombreArchivo,nombreArchivoFinal:str,rutaDestino:str):
+    shutil.move(nombreArchivo, f"{rutaDestino}\\{nombreArchivoFinal}")
+    print(f'Archivo {os.path.basename(nombreArchivo)} movido a {rutaDestino}\\{nombreArchivoFinal}')
+
+def insertarColumnaCsv(archivoOrigen,nombreColumna,dato,separacion=';'):
+    
+    # Leer el archivo CSV en un DataFrame
+    try:
+        df = pd.read_csv(archivoOrigen, index_col=0, sep=separacion)
+    except UnicodeDecodeError:
+        df = pd.read_csv(archivoOrigen, index_col=0, sep=separacion,encoding='latin-1')
+    
+    # Agregar las nuevas columnas
+    df[nombreColumna] = dato
+    df.to_csv(archivoOrigen,sep=separacion)
+    print(f'Al archivo {os.path.basename(archivoOrigen)} se le añadió la columna {nombreColumna} con el dato: {dato}')
+
+def acumularDatos(archivoNuevo,archivoAcumulado):
+    df_nuevo = pd.read_csv(archivoNuevo, index_col=0, sep=";")
+    df_acumulado = pd.read_csv(archivoAcumulado, index_col=0, sep=";")
+    df_combinado = pd.concat([df_acumulado, df_nuevo], axis=0)
+    df_combinado.to_csv(archivoAcumulado,sep=";")
+    print(f'Los datos del archivo {os.path.basename(archivoNuevo)} se han acumulado en el archivo {os.path.basename(archivoAcumulado)}')
+    
+def robotInformeIntervaloCola():
+    rutaDestino = f"C:\\Users\\berna\\Desktop\\MUESTRA"
+    archivoAcumulado = os.path.join(rutaDestino,'Informe_colas_tramos_acumulado.csv')
+    #Se ajusta el tiempo para quedarse con la hora o la hora y media, según en que minute estemos
+    timeActual = datetime.now()
+    fechaDatos = datetime.today().date()
+    #Se busca el tramo ya cerrado, si son 15:25, exporta tramo de 14:30 a 14:59:59
+    timeActual = timeActual - timedelta(minutes=30)
+    horaActual = timeActual.hour
+    minutoActual = timeActual.minute
+    
+    if(minutoActual <30):
+        horaInicio = time(horaActual, 0, 0)
+    else:
+        horaInicio = time(horaActual, 30, 0)
+        
+    descargadoOk = descargarColasTramoMasVoz(horaInicio=horaInicio,fechaInicio=fechaDatos)
+    if(descargadoOk):
+        horaInicio = time.replace(horaInicio,second=0)
+        nombreArchivoFinalUnico = f"Informe_colas_tramos_{str(horaInicio).replace(':','_')}.csv"
+        
+        
+        nombreUltimoArchivo = encontrarUltimoArchivo(nombreArchivoBuscado= 'Informe_colas_desde')
+        insertarColumnaCsv(archivoOrigen=nombreUltimoArchivo,nombreColumna='Fecha',dato=fechaDatos)
+        insertarColumnaCsv(archivoOrigen=nombreUltimoArchivo,nombreColumna='Hora',dato=horaInicio)
+        copiarArchivo(nombreArchivo = nombreUltimoArchivo,nombreArchivoFinal= nombreArchivoFinalUnico, rutaDestino= rutaDestino)
+        moverArchivo(nombreArchivo = nombreUltimoArchivo, nombreArchivoFinal= 'Informe_colas_tramos.csv', rutaDestino= rutaDestino)
+        acumularDatos(archivoNuevo=os.path.join(rutaDestino,'Informe_colas_tramos.csv'),archivoAcumulado=archivoAcumulado)
+    else:
+        print('Hubo un error en la funcion descargarColasTramoMasVoz')
+    
+    
+def ejecutarEnMinutos(funcionALanzar,listaMinutos=[5,35]):
+    primeraVuelta = True
+    while True:
+        horaInicial = datetime.now().time()
+        horaInicial = time.replace(horaInicial,microsecond=0)
+        segundos = horaInicial.second
+        if(horaInicial.minute in listaMinutos) or primeraVuelta:
+            primeraVuelta = False
+            funcionALanzar()
+            horaFinal = datetime.now().time()
+            horaFinal = time.replace(horaFinal,microsecond=0)
+            segundos = horaFinal.second
+            print(f'Se ejecuto entre las {horaInicial} y {horaFinal}')
+        
+        print(f'Son las {horaInicial}...Esperando minutos {listaMinutos}')
+        sleep(60-segundos)
+
+try:
+    ejecutarEnMinutos(funcionALanzar=robotInformeIntervaloCola,listaMinutos=[0,5,10,15,20,25,30,35,40,45,50,55])
+except Exception as error:
+    logger.error("Error:", exc_info=error)
