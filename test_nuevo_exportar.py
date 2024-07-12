@@ -1,7 +1,8 @@
 import os
 from playwright.sync_api import sync_playwright,Browser
 
-
+#para buscar por class usas .
+#para buscar por id usasa #
 def abrir_navegador(oculto=False):
     playwright = sync_playwright().start()
     navegador = playwright.chromium.launch(headless=oculto)    
@@ -28,22 +29,22 @@ navegador = abrir_navegador()
 pagina = abrir_pagina(navegador,url)
 pagina.get_by_placeholder("Nombre de usuario").fill(user)
 pagina.get_by_placeholder("Contraseña de usuario").fill(password)
-pagina.get_by_text("Entrar").click()
+pagina.get_by_text("Entrar",exact=True).click()
 pagina.get_by_text("Estadísticas").click()
 frame = pagina.frame_locator('#estadisticas_0')
 frame.locator(".a_tab_colas").click()
+frame.locator(".tab_estado-agentes").click()
 frame.locator('#stime').clear()
-frame.locator('#stime').press_sequentially('10-07-2024')
+frame.locator('#stime').press_sequentially('01-07-2024')
 frame.get_by_text("Periodo desde : : hasta : : Recibidas Emitidas Llamadas SMS").first.click()
 frame.locator('#etime').clear()
-frame.locator('#etime').press_sequentially('10-07-2024')
-frame.get_by_role('combobox').select_option('Franjas de 30 minutos')
+frame.locator('#etime').press_sequentially('01-07-2024')
+# frame.get_by_role('combobox').select_option('Franjas de 30 minutos')
 frame.get_by_text("Buscar").click(timeout=60000)
 
 # Start waiting for the download
-with pagina.expect_download() as download_info:
-    frame.get_by_role("link", name="CSV").click()
-    # Perform the action that initiates download
+with pagina.expect_download(timeout=60000) as download_info:
+    frame.get_by_role("link", name="CSV").click(timeout=80000)
 
 download = download_info.value
 download.save_as(os.path.join(ruta_destino,nombre_archivo_final))
