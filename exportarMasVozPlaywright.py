@@ -1,17 +1,15 @@
-from playwright.sync_api import sync_playwright,Browser
+from playwright.sync_api import sync_playwright,Browser,expect
 from datetime import time, timedelta, datetime
 from time import sleep
 from copy import deepcopy
 import pandas as pd
 import os
-import glob
 import shutil
 import logging
 import mysql.connector as mysql
 import smtplib
 from email.message import EmailMessage
-import re
-import sys
+import psutil
 
 #Desactivar algunos warning en la terminal
 import warnings
@@ -70,6 +68,32 @@ miPass = "BSPfBSPf007*"
 url = 'https://manager.masvoz.es/'
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# MATAR PROCESO WINDOWS POR NOMBRE
+# ---------------------------------------------------------------------------------------------------------------
+def matar_proceso(nombre_proceso):
+    for proc in psutil.process_iter(["pid", "name"]):
+        if nombre_proceso.lower() in proc.info["name"].lower():
+            pid = proc.info["pid"]
+            try:
+                proceso = psutil.Process(pid)
+                proceso.terminate()
+                # print(f"Proceso {nombre_proceso} (PID {pid}) terminado.")
+            except psutil.NoSuchProcess as e:
+                print(f"El proceso {nombre_proceso} no existe: {e}")
+            except psutil.AccessDenied as e:
+                print(f"No se pudo terminar el proceso {nombre_proceso}: {e}")
+            except Exception as e:
+                print(
+                    f"No se pudo terminar el proceso {nombre_proceso} con terminate(). Intentando con kill(): {e}"
+                )
+                try:
+                    proceso.kill()
+                    # print(f"Proceso {nombre_proceso} (PID {pid}) terminado con kill().")
+                except Exception as e:
+                    print(
+                        f"No se pudo terminar el proceso {nombre_proceso} con kill(): {e}"
+                    )
 
 #para buscar por class usas .
 #para buscar por id usasa #
@@ -111,7 +135,19 @@ def obtener_web_masvoz(seccion='ESTADÍSTICAS',maximizado=False):
         pagina.get_by_placeholder("Nombre de usuario").fill(user)
         pagina.get_by_placeholder("Contraseña de usuario").fill(password)
         pagina.get_by_text("Entrar",exact=True).click()
-    pagina.get_by_text(seccion).click()
+    #compruebo si la sección ya está activada
+    match seccion:
+            case 'INICIO': id_elemento = '#main-btn-inicio'
+            case 'ESTADÍSTICAS': id_elemento = '#main-btn-estadisticas'
+            case 'DETALLES': id_elemento = '#main-btn-detalle'
+            case 'CUENTA': id_elemento = '#main-btn-cuenta'
+            case 'SUPERVISIÓN': id_elemento = '#detalle-main-btn-supervision'
+            case 'SKILLS': id_elemento = '#main-btn-skills'
+    
+    clase_encontrada = pagina.locator(id_elemento).get_attribute("class")
+    if clase_encontrada != 'active':  # Verificar si está ya seleccionada la seccion
+        pagina.locator(id_elemento).click()
+          
     match seccion:
         case 'AGENDA': id_elemento = '#agenda_0'
         case 'ESTADÍSTICAS': id_elemento = '#estadisticas_0'
@@ -387,6 +423,9 @@ def descargar_colas_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=datetime.
     frame.locator(".a_tab_colas").click()
 
     if(fecha_inicio!=datetime.today().date()):
+        frame.locator('#etime').clear()
+        frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
+        frame.get_by_text("Periodo desde : : hasta : : Recibidas Emitidas Llamadas SMS").first.click()
         frame.locator('#stime').clear()
         frame.locator('#stime').press_sequentially(str(str_fecha_inicio_filtro))
         frame.get_by_text("Periodo desde : : hasta : : Recibidas Emitidas Llamadas SMS").first.click()
@@ -896,10 +935,11 @@ def descargar_listado_llamadas(driver,hora_inicio:time, fecha_inicio=datetime.to
     elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento,accion= 'click')
        
     ruta_elemento = '/html/body/div[12]/div[2]/div/div/div[2]/div/form[3]/label[3]'
+    name_elemento = 'emision_llamadas'
     if('silencioso' in globals()):
         if(silencioso==False):
             print('Selecciono Emititas')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.XPATH, texto_buscado= ruta_elemento,accion= 'click')
+    elemento = esperar_elemento(driver= driver, buscar_por= By.NAME, texto_buscado= name_elemento,accion= 'click')
    
     class_elemento = 'advanced-filter-btn'
     if('silencioso' in globals()):
@@ -909,13 +949,13 @@ def descargar_listado_llamadas(driver,hora_inicio:time, fecha_inicio=datetime.to
 
   
     sleep(segundos_de_espera)
-    ruta_elemento = '/html/body/div[12]/div[3]/div/div/div/div/div[2]/span[1]/div/label/p'
+    ruta_elemento = '/html/body/div[11]/div[3]/div/div/div/div/div[2]/span[1]/div/label/input'
     if('silencioso' in globals()):
         if(silencioso==False):
             print('Hago clic en Colgado por Todos')
     elemento = esperar_elemento(driver= driver, buscar_por= By.XPATH, texto_buscado= ruta_elemento, accion='click')
    
-    ruta_elemento = '/html/body/div[12]/div[3]/div/div/div/div/div[2]/span[2]/div/label/p'
+    ruta_elemento = '/html/body/div[11]/div[3]/div/div/div/div/div[2]/span[2]/div/label/p'
     if('silencioso' in globals()):
         if(silencioso==False):
             print('Hago clic en Incluir Todos')
@@ -1499,25 +1539,26 @@ def obtener_tramos_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_fin,colum
         fecha_inicioWhile += tiempo_delta
        
     ###Creo lista de fechas y horas del acumulado
-    df = pd.read_csv(archivo,sep=separador)
-    if(columna_tiempo!=None):
-        df = df[[columna_fecha,columna_tiempo]]
-        columnas_unicas = [columna_fecha,columna_tiempo]
-    else:
-        df = df[[columna_fecha]]
-        columnas_unicas = [columna_fecha]
-       
-   
-    df = df.drop_duplicates(subset=columnas_unicas,keep='last')
-   
-    #Recorro las fechas obtenidas del archivo acumulado y las transforma a datetime
-    for fila in df.itertuples():
-        fecha = datetime.strptime(fila[1].split(" ")[0],formato_fecha)#Obtengo la fecha de la columna Fecha
+    if os.path.exists(archivo):
+        df = pd.read_csv(archivo,sep=separador)
         if(columna_tiempo!=None):
-            hora = datetime.strptime(fila[2],'%H:%M:%S').time() #Obtendo la hora de la columna Hora si la tuviese
+            df = df[[columna_fecha,columna_tiempo]]
+            columnas_unicas = [columna_fecha,columna_tiempo]
         else:
-            hora = time(hour=23,minute=30)
-        lista_fechas_tramos_acumuladas.append(datetime.combine(fecha,hora))
+            df = df[[columna_fecha]]
+            columnas_unicas = [columna_fecha]       
+   
+        df = df.drop_duplicates(subset=columnas_unicas,keep='last')
+   
+        #Recorro las fechas obtenidas del archivo acumulado y las transforma a datetime
+        for fila in df.itertuples():
+            fecha = datetime.strptime(fila[1].split(" ")[0],formato_fecha)#Obtengo la fecha de la columna Fecha
+            if(columna_tiempo!=None):
+                hora = datetime.strptime(fila[2],'%H:%M:%S').time() #Obtendo la hora de la columna Hora si la tuviese
+            else:
+                hora = time(hour=23,minute=30)
+            lista_fechas_tramos_acumuladas.append(datetime.combine(fecha,hora))
+
        
        
     for fecha in lista_fechas_tramos_requeridas:
@@ -1556,13 +1597,14 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
             return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
     
 
-    tipoInforme = 'colas'
+    tipoInforme = 'tramos'
     if(tipoInforme in lista_informes):   
         print('Buscando tramos que faltan en el acumulado tramos')
         lista_fechas_tramos_faltantes= []
         archivo = os.path.join(ruta_destino,'Informe_tramos_acumulado.csv')
         fecha_fin = datetime.now()-timedelta(minutes=30)
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_tramos)
+        
         lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
@@ -1740,6 +1782,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
             return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
         
 def ejecutar_en_minutos(funcion_a_lanzar,lista_minutos=[1,31]):
+    matar_proceso('CHROME')
     primeraVuelta = True
     while True:
         horaInicial = datetime.now().time()
@@ -1758,6 +1801,7 @@ def ejecutar_en_minutos(funcion_a_lanzar,lista_minutos=[1,31]):
         horaFinal = datetime.now().time()
         horaFinal = time.replace(horaFinal,microsecond=0)
         print(f'Son las {horaFinal}...Esperando minutos {lista_minutos}')
+        matar_proceso('CHROME')
         sleep(60-segundos)
 
 def enviar_correo(asunto, mensaje, destinatario):
