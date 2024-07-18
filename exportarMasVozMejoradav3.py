@@ -32,6 +32,7 @@ logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
 #!ASIGNO VARIABLES GLOBALES
+lista_minutos=[1,31]
 lista_informes_a_sacar=['colas','tramos','colas_tramos','actividad_por_agente','actividad_por_agente_cola','estados_por_agente','agentes','listado_llamadas','listado_acd','usuarios_masvoz','skills_agentes']
 silencioso=True #!Para que no muestre tantos print, hay que poner True
 segundos_de_espera = 3 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
@@ -47,6 +48,7 @@ num_dias_para_acumular_listado_acd=3 #!Importante, si se ponen menos días, se e
 primer_tramo_del_dia = 9 #!Importante, necesario para saber si sacamos todos los tramos desde las 0 hrs o desde las 8 de la mañana por ejemplo
 ruta_destino = f"\\\\bcnsmb01.grupokonecta.corp\\SERVICIOS\\BOLL_COMUN_ANALISTAS\\Importar\\Robot" #!ruta de destino donde se almacenan los archivos definitivos
 ruta_destino = f"C:\\Users\\berna\\Desktop\\MUESTRA" #!ruta de destino donde se almacenan los archivos definitivos
+ruta_destino = rf"C:\Users\berna\Desktop\Masvoz" #!ruta de destino donde se almacenan los archivos definitivos
 
 #?VARIABLES RELATIVAS A NAVICAT
 host="172.15.9.179"
@@ -71,14 +73,14 @@ miPass = "BSPfBSPf007*"
 
 
 
-def get_driver_b(maximizado=True,oculto=False,resolucion=list()):
+def get_driver(maximizado=True,oculto=False,resolucion=list()):
     """
     Devuelve un navegado, puedes configurar si lo quieres maximizado,oculto y su resolucion
     """
     current_dir = sys.argv[0]
     # current_dir = os.getcwd()#Opcion 2 para encontrar ruta actual
     current_dir, _  = os.path.split(current_dir)
-    driver_dir = f"{current_dir}\\driver\\chromedriver\\chromedriver.exe"
+    driver_dir = f"{current_dir}\\driver\\chromedriver.exe"
     # chromedriver = driver_dir
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
@@ -98,12 +100,12 @@ def get_driver_b(maximizado=True,oculto=False,resolucion=list()):
     driver.set_window_size(1024, 768)
     return driver
 
-def get_driver(maximizado=True,oculto=False,resolucion=list()):
+def get_driver_B(maximizado=True,oculto=False,resolucion=list()):
     """
     Devuelve un navegado, puedes configurar si lo quieres maximizado,oculto y su resolucion
     """
     current_dir = os.getcwd()
-    driver_dir = f"{current_dir}\\driver\\chromedriver"
+    driver_dir = f"{current_dir}\\driver\\chromedriver.exe"
     chromedriver = driver_dir
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
@@ -1871,6 +1873,8 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_colas)
         lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
         for fecha in reversed(lista_fechas_tramos_faltantes):
+            if datetime.now().minute + 1 in lista_minutos:
+                break
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
                     robot_informes_masvoz(fecha,lista_informes=['colas'])
@@ -1892,6 +1896,8 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_tramos)
         lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
         for fecha in reversed(lista_fechas_tramos_faltantes):
+            if datetime.now().minute + 1 in lista_minutos:
+                break
             try:  
                 if(fecha.hour>=8):
                     robot_informes_masvoz(fecha,lista_informes=['tramos'])
@@ -1913,6 +1919,8 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_colas_tramos)
         lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo',ultimo_tramo_del_dia=False)
         for fecha in reversed(lista_fechas_tramos_faltantes):
+            if datetime.now().minute + 1 in lista_minutos:
+                break
             try:  
                 if(fecha.hour>=8):
                     robot_informes_masvoz(fecha,lista_informes=['colas_tramos'])
@@ -1934,6 +1942,8 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_actividad_por_agente)
         lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
         for fecha in reversed(lista_fechas_tramos_faltantes):
+            if datetime.now().minute + 1 in lista_minutos:
+                break
             try:  
                 if(fecha.hour>=8):
                     robot_informes_masvoz(fecha,lista_informes=['actividad_por_agente'])
@@ -1955,6 +1965,8 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_actividad_por_agente_cola)
         lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
         for fecha in reversed(lista_fechas_tramos_faltantes):
+            if datetime.now().minute + 1 in lista_minutos:
+                break
             try:  
                 if(fecha.hour>=8):
                     robot_informes_masvoz(fecha,lista_informes=['actividad_por_agente_cola'])
@@ -1976,6 +1988,8 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_estados_por_agente)
         lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
         for fecha in reversed(lista_fechas_tramos_faltantes):
+            if datetime.now().minute + 1 in lista_minutos:
+                break
             try:  
                 if(fecha.hour>=8):
                     robot_informes_masvoz(fecha,lista_informes=['estados_por_agente'])
@@ -1997,6 +2011,8 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_agentes)
         lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
         for fecha in reversed(lista_fechas_tramos_faltantes):
+            if datetime.now().minute + 1 in lista_minutos:
+                break
             try:  
                 if(fecha.hour>=8):
                     robot_informes_masvoz(fecha,lista_informes=['agentes'])
@@ -2018,6 +2034,8 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_listado_llamadas)
         lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
         for fecha in reversed(lista_fechas_tramos_faltantes):
+            if datetime.now().minute + 1 in lista_minutos:
+                break
             try:  
                 if(fecha.hour>=8):
                     robot_informes_masvoz(fecha,lista_informes=['listado_llamadas'])
@@ -2039,6 +2057,8 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_listado_acd)
         lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
         for fecha in reversed(lista_fechas_tramos_faltantes):
+            if datetime.now().minute + 1 in lista_minutos:
+                break
             try:  
                 if(fecha.hour>=8):
                     robot_informes_masvoz(fecha,lista_informes=['listado_acd'])
@@ -2594,7 +2614,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
 
 def iniciarRobot():
     try:    
-        ejecutar_en_minutos(funcion_a_lanzar=robot_informes_masvoz,lista_minutos=[1,31])
+        ejecutar_en_minutos(funcion_a_lanzar=robot_informes_masvoz,lista_minutos=lista_minutos)
         # lista = list(range(1, 60))
         # ejecutar_en_minutos(funcion_a_lanzar=robot_informes_masvoz,lista_minutos=lista)
        
