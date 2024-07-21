@@ -114,6 +114,7 @@ def abrir_pagina(navegador:Browser,url:str,resolucion=[1920,1080]):
 def obtener_web_masvoz(seccion='ESTADÍSTICAS',maximizado=False):
     global navegador
     global pagina
+    global frame
     """
     Puedes elegir la seccion en la cual abrir la web de MasVoz, ['INICIO','AGENDA','SKILLS','SUPERVISIÓN','ESTADÍSTICAS','DETALLES','CUENTA']
     """
@@ -169,22 +170,11 @@ def obtener_web_masvoz(seccion='ESTADÍSTICAS',maximizado=False):
             if(silencioso==False):
                 print(f'No encontro el iframe')
         pagina.close()
-        return pagina,False
+        return False
        
-    return pagina,frame
+    return True
 
-def ir_a_seccion_web_masvoz(seccion='ESTADÍSTICAS'):
-    global navegador
-    global pagina
-    match seccion:
-        case 'INICIO': id_elemento = '#main-btn-inicio'
-        case 'ESTADÍSTICAS': id_elemento = '#main-btn-estadisticas'
-        case 'DETALLES': id_elemento = '#main-btn-detalle'
-        case 'CUENTA': id_elemento = '#main-btn-cuenta'
-        case 'SUPERVISIÓN': id_elemento = '#detalle-main-btn-supervision'
-        case 'SKILLS': id_elemento = '#main-btn-skills'
-        
-    pagina.locator(id_elemento).click()  
+  
     
     
    
@@ -541,8 +531,7 @@ def descargar_agentes(frame,pagina,hora_inicio:time,fecha_inicio=datetime.today(
  
 def descargar_listado_llamadas(frame,pagina,hora_inicio:time, fecha_inicio=datetime.today().date()):
     finalizado_ok = False
-   
-   
+      
     fecha_inicio_filtro = fecha_inicio
     str_fecha_inicio_filtro = fecha_inicio_filtro.strftime("%d-%m-%Y")
 
@@ -573,7 +562,18 @@ def descargar_listado_llamadas(frame,pagina,hora_inicio:time, fecha_inicio=datet
    
     frame.locator(".a_tab_detalle").click()
     frame.locator('.btn.btn-block.btn-restablecer').click()
-    frame.locator('.btn.btn-block.advanced-filter-btn').click()
+    
+    #compruebo si filtro avanzado está desplegado
+    try: 
+        frame.locator('.advance-group-hangupby').get_by_title("Todos").check(timeout=1000)
+    except:
+        encontrado = False
+    else:
+        encontrado = True
+    
+    if not encontrado:
+        frame.locator('.btn.btn-block.advanced-filter-btn').click()
+    
     frame.locator('.form-incluir.form-inline').get_by_title("Emitidas").check()
     frame.locator('.advance-group-hangupby').get_by_title("Todos").check()
     frame.locator('.advance-group-include').get_by_title("Todos").check()
@@ -581,11 +581,11 @@ def descargar_listado_llamadas(frame,pagina,hora_inicio:time, fecha_inicio=datet
     
     
     if(fecha_inicio!=datetime.today().date()):
-        frame.locator('#stime').clear()
-        frame.locator('#stime').press_sequentially(str(str_fecha_inicio_filtro))
         frame.locator('#etime').clear()
         frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
         
+        frame.locator('#stime').clear()
+        frame.locator('#stime').press_sequentially(str(str_fecha_inicio_filtro))
     frame.locator('#timepicker3').clear()
     frame.locator('#timepicker3').fill(str_hora_inicio)
     frame.locator('#timepicker4').clear()
@@ -597,15 +597,20 @@ def descargar_listado_llamadas(frame,pagina,hora_inicio:time, fecha_inicio=datet
         pass
 
     frame.get_by_text("Buscar").click(timeout=60000)
-    # Empieza a descargar y espera el archivo de descarga
-    with pagina.expect_download(timeout=60000) as download_info:
-        frame.get_by_role("link", name="CSV").click(timeout=80000)
+    total_resultados = frame.locator("#detalle-llamadas-res").inner_text()
+    if str(total_resultados).startswith('0 Llamadas'):
+        print("Hay 0 Llamadas")
+        return "0_Llamadas"
+    else:
+        # Empieza a descargar y espera el archivo de descarga
+        with pagina.expect_download(timeout=60000) as download_info:
+            frame.get_by_role("link", name="CSV").click(timeout=80000)
 
-    download = download_info.value
-    download.save_as(os.path.join(ruta_destino,'Informe_listado_llamadas.csv'))
-    finalizado_ok = os.path.join(ruta_destino,'Informe_listado_llamadas.csv')
+        download = download_info.value
+        download.save_as(os.path.join(ruta_destino,'Informe_listado_llamadas.csv'))
+        finalizado_ok = os.path.join(ruta_destino,'Informe_listado_llamadas.csv')
 
-    return finalizado_ok
+        return finalizado_ok
     
 
 def descargar_listado_acd(driver,hora_inicio:time, fecha_inicio=datetime.today().date()):
@@ -1213,6 +1218,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo',ultimo_tramo_del_dia=False)
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
+                print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
                 break
             try:  
                 if(fecha.hour>=8):
@@ -1466,7 +1472,9 @@ def prueba_crear_tabla_fija():
     print (resultado)
 
 def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30),lista_informes=lista_informes_a_sacar):
-    global navegador 
+    global navegador
+    global pagina
+    global frame
     # Si está fuera de horario, no exporta nada, primer_tramo_Del_dia está configurado en 9
     if(fecha_hora_inicio.hour<primer_tramo_del_dia):
         print(f'El tramo {fecha_hora_inicio.time()} está fuera del horario del servicio, el primer tramo es el de las {primer_tramo_del_dia}')
@@ -1496,7 +1504,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         
  
 
-    pagina,frame = obtener_web_masvoz()    
+    obtener_web_masvoz()    
     #Compruebo si la función obtener_web_masvoz me ha entregado un navegador o un False, en caso de ser false es que no pudo abrir la web, si ese asi, relanzo la función nuevamente
     if(frame==False):
         print(f'No se pudo tener acceso a la web de MasVoz, se vuelve a intentar en {segundos_de_espera} segundos')
@@ -1655,10 +1663,9 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
         #este informe solo deja descargar una vez, luego hay que cerrar el navegador
         pagina.close()
-        pagina = None
-        
+        pagina = None        
         navegador = None
-        pagina,frame = obtener_web_masvoz()
+        obtener_web_masvoz()
         archivoDescargado = descargar_estados_por_agente(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
@@ -1714,15 +1721,15 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
     archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')      
        
     if any(item in lista_informes for item in ['listado_llamadas']):
-        pagina,frame = obtener_web_masvoz('DETALLES')    
+        
            
-
+        obtener_web_masvoz('DETALLES')
    
         if tipoInforme in lista_informes:
         # if(tipoInforme in lista_informes and fechaDatos == datetime.today().date()):
             print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
             archivoDescargado = descargar_listado_llamadas(frame,pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
-            if(archivoDescargado!=False):
+            if(archivoDescargado!=False and archivoDescargado != '0_Llamadas'):
                 hora_inicio = time.replace(hora_inicio,second=0)
                 insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
                 largo = 0
@@ -1732,9 +1739,11 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
                     eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
                     eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_agentes,desde_la_fecha=fechaDatos)
                     
+            elif archivoDescargado == '0_Llamadas':
+                print(f'No hay llamadas para {fecha_hora_inicio} de informe {tipoInforme}')
             else:
                 print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
-                driver_masvoz.quit()
+
                 
             lista_informes.remove(tipoInforme)
 
@@ -1883,5 +1892,6 @@ def iniciarRobot():
 mi_playwright = lanzar_playwright()
 navegador = None
 pagina = None
+frame = None
 iniciarRobot()
    
