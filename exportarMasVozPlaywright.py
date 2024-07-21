@@ -27,7 +27,7 @@ logger.addHandler(stream_handler)
 lista_minutos=[1,31,32]
 lista_informes_a_sacar=['colas','tramos','colas_tramos','actividad_por_agente','actividad_por_agente_cola','estados_por_agente','agentes','listado_llamadas','listado_acd','usuarios_masvoz','skills_agentes']
 lista_informes_a_sacar=['colas','tramos','colas_tramos','actividad_por_agente']
-lista_informes_a_sacar=['actividad_por_agente']
+lista_informes_a_sacar=['listado_llamadas']
 silencioso=True #!Para que no muestre tantos print, hay que poner True
 segundos_de_espera = 3 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
 num_dias_para_acumular_colas=5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
@@ -56,8 +56,8 @@ tabla_colas_tramos= 'vv_Informe_colas_tramos'
 tabla_actividad_por_agente = 'vv_Informe_actividad_por_agente'
 tabla_estados_por_agente = 'vv_Informe_estados_por_agente'
 tabla_agentes = 'vv_Informe_agentes'
-# tabla_listado_llamadas = 'vv_Informe_listado_llamadas'
-# tabla_listados_acd = 'vv_Informe_listado_acd'
+tabla_listado_llamadas = 'vv_Informe_listado_llamadas'
+tabla_listados_acd = 'vv_Informe_listado_acd'
 
 #?VARIABLES RELATIVAS Al MAIL
 # Configuracion del servidor SMTP
@@ -172,6 +172,21 @@ def obtener_web_masvoz(seccion='ESTADÍSTICAS',maximizado=False):
         return pagina,False
        
     return pagina,frame
+
+def ir_a_seccion_web_masvoz(seccion='ESTADÍSTICAS'):
+    global navegador
+    global pagina
+    match seccion:
+        case 'INICIO': id_elemento = '#main-btn-inicio'
+        case 'ESTADÍSTICAS': id_elemento = '#main-btn-estadisticas'
+        case 'DETALLES': id_elemento = '#main-btn-detalle'
+        case 'CUENTA': id_elemento = '#main-btn-cuenta'
+        case 'SUPERVISIÓN': id_elemento = '#detalle-main-btn-supervision'
+        case 'SKILLS': id_elemento = '#main-btn-skills'
+        
+    pagina.locator(id_elemento).click()  
+    
+    
    
 def descargar_tramos_masmoz(frame,pagina,hora_inicio:time,fecha_inicio=datetime.today().date()):
     finalizado_ok = False
@@ -322,13 +337,12 @@ def descargar_colas_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=datetime.
 
 def descargar_actividad_por_agente(frame,pagina,hora_inicio:time,fecha_inicio=datetime.today().date()):
     finalizado_ok = False
-   
-   
+      
     fecha_inicio_filtro = fecha_inicio
-    str_fecha_inicio_filtro = fecha_inicio_filtro.strftime("%d%m%Y")
+    str_fecha_inicio_filtro = fecha_inicio_filtro.strftime(" %d-%m-%Y")
    
     fecha_fin_filtro = fecha_inicio
-    str_fecha_fin_filtro = fecha_fin_filtro.strftime("%d%m%Y")
+    str_fecha_fin_filtro = fecha_fin_filtro.strftime("%d-%m-%Y")
 
     hora_inicio = hora_inicio
     tiempo_a_sumar = timedelta(minutes=29, seconds=59)
@@ -336,26 +350,28 @@ def descargar_actividad_por_agente(frame,pagina,hora_inicio:time,fecha_inicio=da
 
     horaFin = fecha_hora_inicio + tiempo_a_sumar
     horaFin = horaFin.time()
+    
+    str_hora_inicio = '00:00:00'
+    str_hora_fin = '23:59:59'  
 
     frame.locator(".tab_actividad-agentes").click()
-
-
-    frame.locator('#etime').clear()
-    frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
-    frame.get_by_text("Periodo desde : : hasta : : Recibidas Emitidas Llamadas SMS").first.click()
-    frame.locator('#stime').clear()
-    frame.locator('#stime').press_sequentially(str(str_fecha_inicio_filtro))
-    frame.get_by_text("Periodo desde : : hasta : : Recibidas Emitidas Llamadas SMS").first.click()
-    frame.locator('#etime').clear()
-    frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
-
- 
-    frame.locator('#timepicker3').fill('00:00:00')
-    frame.locator('#timepicker4').fill('23:59:59')
-
-    frame.get_by_role('combobox').select_option('Cola y Agente')
-    frame.get_by_role("button", name="Aceptar").click(timeout=1000) #pulso aceptar si muestra mensaje de que no hay datos
-    # frame.locator('.btn.aceptar').click()
+    frame.locator('.btn.btn-block.btn-restablecer').click()
+    if(fecha_inicio!=datetime.today().date()):
+        frame.locator('#stime').clear()
+        frame.locator('#stime').press_sequentially(str(str_fecha_inicio_filtro))
+        frame.locator('#etime').clear()
+        frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
+        
+    frame.locator('#timepicker3').clear()
+    frame.locator('#timepicker3').fill(str_hora_inicio)
+    frame.locator('#timepicker4').clear()
+    frame.locator('#timepicker4').fill(str_hora_fin)
+    frame.get_by_role('combobox').select_option('Agente')
+    
+    try:
+        frame.get_by_role("button", name="Aceptar").click(timeout=1000) #pulso aceptar si muestra mensaje de que no hay datos
+    except:
+        pass
 
     frame.get_by_text("Buscar").click(timeout=60000)
     # Empieza a descargar y espera el archivo de descarga
@@ -368,224 +384,59 @@ def descargar_actividad_por_agente(frame,pagina,hora_inicio:time,fecha_inicio=da
 
     return finalizado_ok
 
-def descargar_actividad_por_agente_cola (driver,hora_inicio:time,fecha_inicio=datetime.today().date()):
+def descargar_actividad_por_agente_cola (frame,pagina,hora_inicio:time,fecha_inicio=datetime.today().date()):
     finalizado_ok = False
-   
-   
-    fecha_inicio_filtro = fecha_inicio
-    str_fecha_inicio_filtro = fecha_inicio_filtro.strftime("%d-%m-%Y")
-   
-    fecha_fin_filtro = fecha_inicio
-    str_fecha_fin_filtro = fecha_fin_filtro.strftime("%d-%m-%Y")
-
-    hora_inicio = hora_inicio
-    str_hora_inicio = hora_inicio.strftime("%H:%M:%S")
-    tiempo_a_sumar = timedelta(minutes=29, seconds=59)
-    fecha_hora_inicio = datetime.combine(fecha_inicio_filtro,hora_inicio)
-
-    horaFin = fecha_hora_inicio + tiempo_a_sumar
-    horaFin = horaFin.time()
-    str_hora_fin = horaFin.strftime("%H:%M:%S")    
-   
-    str_hora_inicio = '00:00:00'
-    str_hora_fin = '23:59:59'  
- 
-    class_elemento = 'tab_actividad-agentes'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Selecciono pestaña actividad por agente')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento,accion= 'click')
-
-    if(fecha_inicio!=datetime.today().date()):
-        id_elemento = 'stime'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print(f'Selecciono Periodo Inicio: {str(str_fecha_inicio_filtro)}')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion= 'escribir', texto_a_escribir=str(str_fecha_inicio_filtro), primero_borrar=True)
-
-        # sleep(segundos_de_espera)
-        ruta_elemento = '/html/body/div[6]/div[2]/div[2]/div'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print('Oculto Ventana Fecha Periodo desde')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.XPATH, texto_buscado= ruta_elemento, accion='click')
-
-        # sleep(segundos_de_espera)
-        id_elemento = 'etime'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print(f'Selecciono Periodo hasta: {str(str_fecha_fin_filtro)}')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion= 'escribir', texto_a_escribir= str(str_fecha_fin_filtro), primero_borrar=True)
-
-        # sleep(segundos_de_espera)
-        ruta_elemento = '/html/body/div[6]/div[2]/div[2]/div'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print('Oculto Ventana Fecha Periodo desde')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.XPATH, texto_buscado= ruta_elemento, accion='click')
-
-    id_elemento = 'timepicker3'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print(f'Escribo Tramo inicial: {str_hora_inicio}')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion='escribir', texto_a_escribir=str_hora_inicio, primero_borrar=True)
-
-    id_elemento = 'timepicker4'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print(f'Escribo Tramo final: {str_hora_fin}')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion='escribir', texto_a_escribir=str_hora_fin, primero_borrar=True)
-
-    # sleep(segundos_de_espera)
-    ruta_elemento = '/html/body/div[6]/div[10]/div/div[8]/div/div[1]/div[2]/div/button'
-   
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Hago click en agrupado por')
-    elementos = esperar_elemento(driver= driver, buscar_por= By.XPATH, texto_buscado= ruta_elemento, accion='click')
-
-
-    class_elemento = 'Cola y Agente'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Hago click en Agente')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.LINK_TEXT, texto_buscado= class_elemento, accion='click')
-   
-    sleep(segundos_de_espera)    
-    class_elemento = 'btn-buscar'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Empieza a buscar')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento, accion='click')
-
-    class_elemento = 'loading_main'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Buscando elemento loading')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento)
-    
-
-    ruta_elemento = '/html/body/div[6]/div[10]/div/div[8]/div/div[1]/div[3]/a[1]'
-    texto_elemento = 'CSV'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Exporto en CSV')
-    hora_descarga = datetime.now() #Asigno Hora para buscar en las descargar
-    elemento = esperar_elemento(driver= driver, buscar_por= By.LINK_TEXT, texto_buscado= texto_elemento, accion='click')
-
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Espero que descargue el archivo')
-    archivo_encontrado = esperando_archivo_nuevo(hora_descarga=hora_descarga,nombre_archivo_comienza_por='Informe_actividad_agentes',extension='csv')
-
-    #devuelve el nombre del archivo encontrado
-    if (archivo_encontrado != None):
-        finalizado_ok = archivo_encontrado
-       
-    return finalizado_ok
-
-def descargar_estados_por_agente(driver,hora_inicio:time,fecha_inicio=datetime.today().date()):
-    finalizado_ok = False
-   
-   
-    fecha_inicio_filtro = fecha_inicio
-    str_fecha_inicio_filtro = fecha_inicio_filtro.strftime("%d-%m-%Y")
-   
-    fecha_fin_filtro = fecha_inicio
-    str_fecha_fin_filtro = fecha_fin_filtro.strftime("%d-%m-%Y")
-
-    hora_inicio = hora_inicio
-    str_hora_inicio = hora_inicio.strftime("%H:%M:%S")
-    tiempo_a_sumar = timedelta(minutes=29, seconds=59)
-    fecha_hora_inicio = datetime.combine(fecha_inicio_filtro,hora_inicio)
-
-    horaFin = fecha_hora_inicio + tiempo_a_sumar
-    horaFin = horaFin.time()
-    str_hora_fin = horaFin.strftime("%H:%M:%S")    
-   
-    str_hora_inicio = '00:00:00'
-    str_hora_fin = '23:59:59'  
- 
-    class_elemento = 'tab_estado-agentes'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Selecciono pestaña estado por agente')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento,accion= 'click')
-
-    if(fecha_inicio!=datetime.today().date()):
-        id_elemento = 'stime'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print(f'Selecciono Periodo Inicio: {str(str_fecha_inicio_filtro)}')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion= 'escribir', texto_a_escribir=str(str_fecha_inicio_filtro), primero_borrar=True)
-
-        # sleep(segundos_de_espera)
-        ruta_elemento = '/html/body/div[6]/div[2]/div[2]/div'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print('Oculto Ventana Fecha Periodo desde')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.XPATH, texto_buscado= ruta_elemento, accion='click')
-
-        # sleep(segundos_de_espera)
-        id_elemento = 'etime'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print(f'Selecciono Periodo hasta: {str(str_fecha_fin_filtro)}')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion= 'escribir', texto_a_escribir= str(str_fecha_fin_filtro), primero_borrar=True)
-
-        # sleep(segundos_de_espera)
-        ruta_elemento = '/html/body/div[6]/div[2]/div[2]/div'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print('Oculto Ventana Fecha Periodo desde')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.XPATH, texto_buscado= ruta_elemento, accion='click')
-
-    id_elemento = 'timepicker3'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print(f'Escribo Tramo inicial: {str_hora_inicio}')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion='escribir', texto_a_escribir=str_hora_inicio, primero_borrar=True)
-
-    id_elemento = 'timepicker4'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print(f'Escribo Tramo final: {str_hora_fin}')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion='escribir', texto_a_escribir=str_hora_fin, primero_borrar=True)
-
-    sleep(segundos_de_espera)    
-    class_elemento = 'btn-buscar'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Empieza a buscar')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento, accion='click')
-
       
-    class_elemento = 'loading_main'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Buscando elemento loading')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento)
-       
-    sleep(segundos_de_espera)
-    texto_elemento = 'CSV'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Exporto en CSV')
-    hora_descarga = datetime.now() #Asigno Hora para buscar en las descargar
-    elemento = esperar_elemento(driver= driver, buscar_por= By.LINK_TEXT, texto_buscado= texto_elemento, accion='click')
+    fecha_inicio_filtro = fecha_inicio
+    str_fecha_inicio_filtro = fecha_inicio_filtro.strftime("%d-%m-%Y")
+   
+    fecha_fin_filtro = fecha_inicio
+    str_fecha_fin_filtro = fecha_fin_filtro.strftime("%d-%m-%Y")
 
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Espero que descargue el archivo')
-    archivo_encontrado = esperando_archivo_nuevo(hora_descarga=hora_descarga,nombre_archivo_comienza_por='Informe_estado_agentes',extension='csv')
+    hora_inicio = hora_inicio
+    str_hora_inicio = hora_inicio.strftime("%H:%M:%S")
+    tiempo_a_sumar = timedelta(minutes=29, seconds=59)
+    fecha_hora_inicio = datetime.combine(fecha_inicio_filtro,hora_inicio)
 
-    #devuelve el nombre del archivo encontrado
-    if (archivo_encontrado != None):
-        finalizado_ok = archivo_encontrado
-       
+    horaFin = fecha_hora_inicio + tiempo_a_sumar
+    horaFin = horaFin.time()
+    str_hora_fin = horaFin.strftime("%H:%M:%S")    
+   
+    str_hora_inicio = '00:00:00'
+    str_hora_fin = '23:59:59'  
+    
+    frame.locator(".tab_actividad-agentes").click()
+    frame.locator('.btn.btn-block.btn-restablecer').click()
+    if(fecha_inicio!=datetime.today().date()):
+        frame.locator('#stime').clear()
+        frame.locator('#stime').press_sequentially(str(str_fecha_inicio_filtro))
+        frame.locator('#etime').clear()
+        frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
+        
+    frame.locator('#timepicker3').clear()
+    frame.locator('#timepicker3').fill(str_hora_inicio)
+    frame.locator('#timepicker4').clear()
+    frame.locator('#timepicker4').fill(str_hora_fin)
+    frame.get_by_role('combobox').select_option('Cola y Agente')
+    
+    try:
+        frame.get_by_role("button", name="Aceptar").click(timeout=1000) #pulso aceptar si muestra mensaje de que no hay datos
+    except:
+        pass
+
+    frame.get_by_text("Buscar").click(timeout=60000)
+    # Empieza a descargar y espera el archivo de descarga
+    with pagina.expect_download(timeout=60000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=80000)
+
+    download = download_info.value
+    download.save_as(os.path.join(ruta_destino,'Informe_actividad_por_agente_cola.csv'))
+    finalizado_ok = os.path.join(ruta_destino,'Informe_actividad_por_agente_cola.csv')
+
     return finalizado_ok
 
-def descargar_agentes(driver,hora_inicio:time,fecha_inicio=datetime.today().date()):
+def descargar_estados_por_agente(frame,pagina,hora_inicio:time,fecha_inicio=datetime.today().date()):
+    #Solo deja descargar una vez, para saltar esta limitación hay que volver abrir el navegador    
     finalizado_ok = False
    
    
@@ -606,101 +457,89 @@ def descargar_agentes(driver,hora_inicio:time,fecha_inicio=datetime.today().date
    
     str_hora_inicio = '00:00:00'
     str_hora_fin = '23:59:59'  
- 
-    class_elemento = 'a_tab_agentes'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Selecciono pestaña agentes')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento,accion= 'click')
-
+    
+    frame.locator(".tab_estado-agentes").click()
+    frame.locator('.btn.btn-block.btn-restablecer').click()
     if(fecha_inicio!=datetime.today().date()):
-        id_elemento = 'stime'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print(f'Selecciono Periodo Inicio: {str(str_fecha_inicio_filtro)}')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion= 'escribir', texto_a_escribir=str(str_fecha_inicio_filtro), primero_borrar=True)
+        frame.locator('#stime').clear()
+        frame.locator('#stime').press_sequentially(str(str_fecha_inicio_filtro))
+        frame.locator('#etime').clear()
+        frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
+        
+    frame.locator('#timepicker3').clear()
+    frame.locator('#timepicker3').fill(str_hora_inicio)
+    frame.locator('#timepicker4').clear()
+    frame.locator('#timepicker4').fill(str_hora_fin)
+    
+    try:
+        frame.get_by_role("button", name="Aceptar").click(timeout=1000) #pulso aceptar si muestra mensaje de que no hay datos
+    except:
+        pass
 
-        # sleep(segundos_de_espera)
-        ruta_elemento = '/html/body/div[6]/div[2]/div[2]/div'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print('Oculto Ventana Fecha Periodo desde')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.XPATH, texto_buscado= ruta_elemento, accion='click')
+    frame.get_by_text("Buscar").click(timeout=60000)
+    # Empieza a descargar y espera el archivo de descarga
+    with pagina.expect_download(timeout=60000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=80000)
 
-        # sleep(segundos_de_espera)
-        id_elemento = 'etime'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print(f'Selecciono Periodo hasta: {str(str_fecha_fin_filtro)}')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion= 'escribir', texto_a_escribir= str(str_fecha_fin_filtro), primero_borrar=True)
+    download = download_info.value
+    download.save_as(os.path.join(ruta_destino,'Informe_estados_por_agente.csv'))
+    finalizado_ok = os.path.join(ruta_destino,'Informe_estados_por_agente.csv')
 
-        # sleep(segundos_de_espera)
-        ruta_elemento = '/html/body/div[6]/div[2]/div[2]/div'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print('Oculto Ventana Fecha Periodo desde')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.XPATH, texto_buscado= ruta_elemento, accion='click')
-
-    id_elemento = 'timepicker3'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print(f'Escribo Tramo inicial: {str_hora_inicio}')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion='escribir', texto_a_escribir=str_hora_inicio, primero_borrar=True)
-
-    id_elemento = 'timepicker4'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print(f'Escribo Tramo final: {str_hora_fin}')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion='escribir', texto_a_escribir=str_hora_fin, primero_borrar=True)
-
-    # sleep(segundos_de_espera)
-    ruta_elemento = '/html/body/div[6]/div[10]/div/div[7]/div/div[1]/div[2]/div/button'
-   
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Hago click en agrupado por')
-    elementos = esperar_elemento(driver= driver, buscar_por= By.XPATH, texto_buscado= ruta_elemento, accion='click')
-
-
-    class_elemento = 'Agente'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Hago click en Agente')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.LINK_TEXT, texto_buscado= class_elemento, accion='click')
-   
-    sleep(segundos_de_espera)    
-    class_elemento = 'btn-buscar'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Empieza a buscar')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento, accion='click')
-
-    class_elemento = 'loading_main'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Buscando elemento loading')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento)
-       
-    ruta_elemento = '/html/body/div[6]/div[10]/div/div[7]/div/div[1]/div[3]/a[1]'
-    texto_elemento = 'CSV'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Exporto en CSV')
-    hora_descarga = datetime.now() #Asigno Hora para buscar en las descargar
-    elemento = esperar_elemento(driver= driver, buscar_por= By.LINK_TEXT, texto_buscado= texto_elemento, accion='click')
-
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Espero que descargue el archivo')
-    archivo_encontrado = esperando_archivo_nuevo(hora_descarga=hora_descarga,nombre_archivo_comienza_por='Informe_agentes',extension='csv')
-
-    #devuelve el nombre del archivo encontrado
-    if (archivo_encontrado != None):
-        finalizado_ok = archivo_encontrado
-       
     return finalizado_ok
 
-def descargar_listado_llamadas(driver,hora_inicio:time, fecha_inicio=datetime.today().date()):
+def descargar_agentes(frame,pagina,hora_inicio:time,fecha_inicio=datetime.today().date()):
+    finalizado_ok = False
+   
+   
+    fecha_inicio_filtro = fecha_inicio
+    str_fecha_inicio_filtro = fecha_inicio_filtro.strftime("%d-%m-%Y")
+   
+    fecha_fin_filtro = fecha_inicio
+    str_fecha_fin_filtro = fecha_fin_filtro.strftime("%d-%m-%Y")
+
+    hora_inicio = hora_inicio
+    str_hora_inicio = hora_inicio.strftime("%H:%M:%S")
+    tiempo_a_sumar = timedelta(minutes=29, seconds=59)
+    fecha_hora_inicio = datetime.combine(fecha_inicio_filtro,hora_inicio)
+
+    horaFin = fecha_hora_inicio + tiempo_a_sumar
+    horaFin = horaFin.time()
+    str_hora_fin = horaFin.strftime("%H:%M:%S")    
+   
+    str_hora_inicio = '00:00:00'
+    str_hora_fin = '23:59:59'  
+
+    frame.locator(".a_tab_agentes").click()
+    frame.locator('.btn.btn-block.btn-restablecer').click()
+    if(fecha_inicio!=datetime.today().date()):
+        frame.locator('#stime').clear()
+        frame.locator('#stime').press_sequentially(str(str_fecha_inicio_filtro))
+        frame.locator('#etime').clear()
+        frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
+        
+    frame.locator('#timepicker3').clear()
+    frame.locator('#timepicker3').fill(str_hora_inicio)
+    frame.locator('#timepicker4').clear()
+    frame.locator('#timepicker4').fill(str_hora_fin)
+    frame.get_by_role('combobox').select_option('Agente')
+    
+    try:
+        frame.get_by_role("button", name="Aceptar").click(timeout=1000) #pulso aceptar si muestra mensaje de que no hay datos
+    except:
+        pass
+
+    frame.get_by_text("Buscar").click(timeout=60000)
+    # Empieza a descargar y espera el archivo de descarga
+    with pagina.expect_download(timeout=60000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=80000)
+
+    download = download_info.value
+    download.save_as(os.path.join(ruta_destino,'Informe_agentes.csv'))
+    finalizado_ok = os.path.join(ruta_destino,'Informe_agentes.csv')
+
+    return finalizado_ok
+ 
+def descargar_listado_llamadas(frame,pagina,hora_inicio:time, fecha_inicio=datetime.today().date()):
     finalizado_ok = False
    
    
@@ -732,12 +571,37 @@ def descargar_listado_llamadas(driver,hora_inicio:time, fecha_inicio=datetime.to
     str_hora_inicio = '00:00:00'
     str_hora_fin = '23:59:59'  
    
-    class_elemento = 'a_tab_detalle'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Selecciono pestaña Listado de llamadas')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento,accion= 'click')
-       
+    frame.locator(".a_tab_detalle").click()
+    frame.locator('.btn.btn-block.btn-restablecer').click()
+    frame.get_by_text("Emitidas").click()
+    if(fecha_inicio!=datetime.today().date()):
+        frame.locator('#stime').clear()
+        frame.locator('#stime').press_sequentially(str(str_fecha_inicio_filtro))
+        frame.locator('#etime').clear()
+        frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
+        
+    frame.locator('#timepicker3').clear()
+    frame.locator('#timepicker3').fill(str_hora_inicio)
+    frame.locator('#timepicker4').clear()
+    frame.locator('#timepicker4').fill(str_hora_fin)
+    frame.get_by_role('combobox').select_option('Agente')
+    
+    try:
+        frame.get_by_role("button", name="Aceptar").click(timeout=1000) #pulso aceptar si muestra mensaje de que no hay datos
+    except:
+        pass
+
+    frame.get_by_text("Buscar").click(timeout=60000)
+    # Empieza a descargar y espera el archivo de descarga
+    with pagina.expect_download(timeout=60000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=80000)
+
+    download = download_info.value
+    download.save_as(os.path.join(ruta_destino,'Informe_agentes.csv'))
+    finalizado_ok = os.path.join(ruta_destino,'Informe_agentes.csv')
+
+    return finalizado_ok
+    
     ruta_elemento = '/html/body/div[12]/div[2]/div/div/div[2]/div/form[3]/label[3]'
     name_elemento = 'emision_llamadas'
     if('silencioso' in globals()):
@@ -1586,6 +1450,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
             return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
         
 def ejecutar_en_minutos(funcion_a_lanzar,lista_minutos=[1,31]):
+
     matar_proceso('CHROME')
     primeraVuelta = True
     while True:
@@ -1600,6 +1465,7 @@ def ejecutar_en_minutos(funcion_a_lanzar,lista_minutos=[1,31]):
             horaFinal = datetime.now().time()
             horaFinal = time.replace(horaFinal,microsecond=0)
             segundos = horaFinal.second
+            # matar_proceso('CHROME')
             print(f'Se ejecuto entre las {horaInicial} y {horaFinal}')
             # enviar_correo(asunto="Robot MasVoz",mensaje=f"Exportado realizado, se ejecutó entre las {horaInicial} y {horaFinal} con el tramo de las {fecha_hora_inicio}",destinatario=destinatarioCorreo)
         horaFinal = datetime.now().time()
@@ -1686,6 +1552,7 @@ def prueba_crear_tabla_fija():
     print (resultado)
 
 def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30),lista_informes=lista_informes_a_sacar):
+    global navegador 
     # Si está fuera de horario, no exporta nada, primer_tramo_Del_dia está configurado en 9
     if(fecha_hora_inicio.hour<primer_tramo_del_dia):
         print(f'El tramo {fecha_hora_inicio.time()} está fuera del horario del servicio, el primer tramo es el de las {primer_tramo_del_dia}')
@@ -1714,273 +1581,239 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         # raise ValueError("La Fecha no puede ser superior a ahora mismo")
         
  
-    if any(item in lista_informes for item in ['colas', 'tramos','colas_tramos','actividad_por_agente','actividad_por_agente_cola','estados_por_agente']):
-        print(f'Abriendo web MasVoz')
-        pagina,frame = obtener_web_masvoz()    
-        #Compruebo si la función obtener_web_masvoz me ha entregado un navegador o un False, en caso de ser false es que no pudo abrir la web, si ese asi, relanzo la función nuevamente
-        if(frame==False):
-            print(f'No se pudo tener acceso a la web de MasVoz, se vuelve a intentar en {segundos_de_espera} segundos')
-            sleep(segundos_de_espera)
-            robot_informes_masvoz(fecha_hora_inicio=fecha_hora_inicio,lista_informes=lista_informes)
-       
 
-   
-        """
-        IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
-        """
-        tipoInforme = 'colas'    
-        columnas_unicas = ['Categoría','Fecha']
-        archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
-   
-        if(tipoInforme in lista_informes):
-            print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-            archivoDescargado = descargar_colas_masvoz(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
-            if(archivoDescargado!=False):
-                hora_inicio = time.replace(hora_inicio,second=0)
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
-                largo = 0
-                largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
-                if largo>3:
-                    acumular_datos(archivo_nuevo=archivoDescargado,archivo_acumulado=archivo_acumulado)
-                    eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                    eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_colas,desde_la_fecha=fechaDatos)
-                    
-            else:
-                print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
-                driver_masvoz.quit()
-                driver_masvoz = obtener_web_masvoz()
+    pagina,frame = obtener_web_masvoz()    
+    #Compruebo si la función obtener_web_masvoz me ha entregado un navegador o un False, en caso de ser false es que no pudo abrir la web, si ese asi, relanzo la función nuevamente
+    if(frame==False):
+        print(f'No se pudo tener acceso a la web de MasVoz, se vuelve a intentar en {segundos_de_espera} segundos')
+        sleep(segundos_de_espera)
+        robot_informes_masvoz(fecha_hora_inicio=fecha_hora_inicio,lista_informes=lista_informes)
+    
+
+
+    """
+    IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
+    """
+    tipoInforme = 'colas'    
+    columnas_unicas = ['Categoría','Fecha']
+    archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
+
+    if(tipoInforme in lista_informes):
+        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        archivoDescargado = descargar_colas_masvoz(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        if(archivoDescargado!=False):
+            hora_inicio = time.replace(hora_inicio,second=0)
+            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            largo = 0
+            largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
+            if largo>3:
+                acumular_datos(archivo_nuevo=archivoDescargado,archivo_acumulado=archivo_acumulado)
+                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_colas,desde_la_fecha=fechaDatos)
+                
+        else:
+            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+        
+        lista_informes.remove(tipoInforme)
+        
+
+    """
+    IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
+    """
+    tipoInforme = 'tramos'
+    columnas_unicas = ['Categoría','Fecha']
+    archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
+
+    if(tipoInforme in lista_informes):
+        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        archivoDescargado = descargar_tramos_masmoz(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        if(archivoDescargado!=False):
+            hora_inicio = time.replace(hora_inicio,second=0)
+            nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
+            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            largo = 0
+            largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
+            if largo>3:
+                acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
+                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_tramos,desde_la_fecha=fechaDatos)
+                
+        else:
+            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+
+        lista_informes.remove(tipoInforme)
+
+    """
+    IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
+    """    
+    tipoInforme = 'colas_tramos'  
+    columnas_unicas = ['Categoría','Fecha','Tramo']
+    archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
+
+    if(tipoInforme in lista_informes):
+        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        archivoDescargado = descargar_colas_tramos_masvoz(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        if(archivoDescargado!=False):
+            hora_inicio = time.replace(hora_inicio,second=0)
+            nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
+            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo',dato=hora_inicio)
+            largo = 0
+            largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
+            if largo>3:
+                acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
+                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_colas_tramos,desde_la_fecha=fechaDatos)
+
+        else:
+            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+
+        lista_informes.remove(tipoInforme)
             
-            lista_informes.remove(tipoInforme)
-           
-   
-        """
-        IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
-        """
-        tipoInforme = 'tramos'
-        columnas_unicas = ['Categoría','Fecha']
-        archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
-   
-        if(tipoInforme in lista_informes):
-            print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-            archivoDescargado = descargar_tramos_masmoz(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
-            if(archivoDescargado!=False):
-                hora_inicio = time.replace(hora_inicio,second=0)
-                nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
-                largo = 0
-                largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
-                if largo>3:
-                    mover_archivo(nombre_archivo = archivoDescargado, nombre_archivo_final= f'Informe_{tipoInforme}.csv', ruta_destino= ruta_destino)
-                    acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
-                    eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                    eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_tramos,desde_la_fecha=fechaDatos)
-                    
-            else:
-                print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
-                driver_masvoz.quit()
-                driver_masvoz = obtener_web_masvoz()
+    """
+    IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
+    """
+    tipoInforme = 'actividad_por_agente'
+    columnas_unicas = ['Categoría','Fecha']
+    archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
 
-            lista_informes.remove(tipoInforme)
-
-        """
-        IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
-        """    
-        tipoInforme = 'colas_tramos'  
-        columnas_unicas = ['Categoría','Fecha','Tramo']
-        archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
-   
-        if(tipoInforme in lista_informes):
-            print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-            archivoDescargado = descargar_colas_tramos_masvoz(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
-            if(archivoDescargado!=False):
-                hora_inicio = time.replace(hora_inicio,second=0)
-                nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo',dato=hora_inicio)
-                largo = 0
-                largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
-                if largo>3:
-                    mover_archivo(nombre_archivo = archivoDescargado, nombre_archivo_final= f'Informe_{tipoInforme}.csv', ruta_destino= ruta_destino)
-                    acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
-                    eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                    eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_colas_tramos,desde_la_fecha=fechaDatos)
-
-            else:
-                print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
-
-            lista_informes.remove(tipoInforme)
-               
-        """
-        IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
-        """
-        tipoInforme = 'actividad_por_agente'
-        columnas_unicas = ['Categoría','Fecha']
-        archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
-   
-        if(tipoInforme in lista_informes):
-            print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-            archivoDescargado = descargar_actividad_por_agente(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
-            if(archivoDescargado!=False):
-                hora_inicio = time.replace(hora_inicio,second=0)
-                nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
-                largo = 0
-                largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
-                if largo>3:
-                    mover_archivo(nombre_archivo = archivoDescargado, nombre_archivo_final= f'Informe_{tipoInforme}.csv', ruta_destino= ruta_destino)
-                    acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
-                    eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                    eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_actividad_por_agente,desde_la_fecha=fechaDatos)
+    if(tipoInforme in lista_informes):
+        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        archivoDescargado = descargar_actividad_por_agente(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        if(archivoDescargado!=False):
+            hora_inicio = time.replace(hora_inicio,second=0)
+            nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
+            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            largo = 0
+            largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
+            if largo>1:
+                acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
+                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_actividad_por_agente,desde_la_fecha=fechaDatos)
+        
+        else:
+            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+        
+        lista_informes.remove(tipoInforme)
             
-            else:
-                print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
-            
-            lista_informes.remove(tipoInforme)
-               
-        """
-        IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
-        """
-        tipoInforme = 'actividad_por_agente_cola'
-        columnas_unicas = ['Categoría','Cola','Fecha']
-        archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
-   
-        if(tipoInforme in lista_informes):
-            print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-            archivoDescargado = descargar_actividad_por_agente_cola(driver=driver_masvoz,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
-            if(archivoDescargado!=False):
-                hora_inicio = time.replace(hora_inicio,second=0)
-                nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
-                largo = 0
-                largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
-                if largo>3:
-                    mover_archivo(nombre_archivo = archivoDescargado, nombre_archivo_final= f'Informe_{tipoInforme}.csv', ruta_destino= ruta_destino)
-                    acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
-                    eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                    eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_actividad_por_agente_cola,desde_la_fecha=fechaDatos)
-                    
-            else:
-                print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
-                driver_masvoz.quit()
-                driver_masvoz = obtener_web_masvoz()    
-   
-            lista_informes.remove(tipoInforme)
+    """
+    IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
+    """
+    tipoInforme = 'actividad_por_agente_cola'
+    columnas_unicas = ['Categoría','Cola','Fecha']
+    archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
+
+    if(tipoInforme in lista_informes):
+        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        archivoDescargado = descargar_actividad_por_agente_cola(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        if(archivoDescargado!=False):
+            hora_inicio = time.replace(hora_inicio,second=0)
+            nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
+            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            largo = 0
+            largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
+            if largo>3:
+                acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
+                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_actividad_por_agente_cola,desde_la_fecha=fechaDatos)
+                
+        else:
+            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+
+
+        lista_informes.remove(tipoInforme)
 
 
 
-            
-        """
-        IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
-        """
-        tipoInforme = 'estados_por_agente'
-        columnas_unicas = ['Agente','Fecha','Hora','Estado inicial','Estado final','Evento']
-        archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
-   
-        if(tipoInforme in lista_informes):
-            print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-            archivoDescargado = descargar_estados_por_agente(driver=driver_masvoz,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
-            if(archivoDescargado!=False):
-                hora_inicio = time.replace(hora_inicio,second=0)
-                nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
-                largo = 0
-                largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
-                if largo>3:
-                    mover_archivo(nombre_archivo = archivoDescargado, nombre_archivo_final= f'Informe_{tipoInforme}.csv', ruta_destino= ruta_destino)
-                    acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado,formato_fecha='%d-%m-%Y')
-                    eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                    eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_estados_por_agente,desde_la_fecha=fechaDatos)
-                    
-            else:
-                print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
-                driver_masvoz.quit()
+        
+    """
+    IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
+    """
+    tipoInforme = 'estados_por_agente'
+    columnas_unicas = ['Agente','Fecha','Hora','Estado inicial','Estado final','Evento']
+    archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
 
-            lista_informes.remove(tipoInforme)
-            
-            print('Cierro y abro navegador, porque no deja descargar mas exportados en la misma sesión')
-            driver_masvoz.quit()
+    if(tipoInforme in lista_informes):
+        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        #este informe solo deja descargar una vez, luego hay que cerrar el navegador
+        pagina.close()
+        pagina = None
+        
+        navegador = None
+        pagina,frame = obtener_web_masvoz()
+        archivoDescargado = descargar_estados_por_agente(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        if(archivoDescargado!=False):
+            hora_inicio = time.replace(hora_inicio,second=0)
+            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            largo = 0
+            largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
+            if largo>3:
+                acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado,formato_fecha='%d-%m-%Y')
+                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_estados_por_agente,desde_la_fecha=fechaDatos)
+                
+        else:
+            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+
+        lista_informes.remove(tipoInforme)
+
    
 
-    if any(item in lista_informes for item in ['agentes']):
-        print(f'Abriendo web MasVoz')
-        driver_masvoz = obtener_web_masvoz()    
-        #Compruebo si la función obtener_web_masvoz me ha entregado un navegador o un False, en caso de ser false es que no pudo abrir la web, si ese asi, relanzo la función nuevamente
-        if(driver_masvoz==False):
-            print('No se pudo tener acceso a la web de MasVoz, se vuelve a intentar en 10 segundos')
-            sleep(segundos_de_espera)
-            robot_informes_masvoz(fecha_hora_inicio=fecha_hora_inicio,lista_informes=lista_informes)
-         
 
- 
+    """
+    IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
+    """
+    tipoInforme = 'agentes'
+    columnas_unicas = ['Categoría','Fecha']
+    archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
 
-        """
-        IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
-        """
-        tipoInforme = 'agentes'
-        columnas_unicas = ['Categoría','Fecha']
-        archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
-   
-        if(tipoInforme in lista_informes):
-            print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-            archivoDescargado = descargar_agentes(driver=driver_masvoz,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
-            if(archivoDescargado!=False):
-                hora_inicio = time.replace(hora_inicio,second=0)
-                nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
-                largo = 0
-                largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
-                if largo>3:
-                    mover_archivo(nombre_archivo = archivoDescargado, nombre_archivo_final= f'Informe_{tipoInforme}.csv', ruta_destino= ruta_destino)
-                    acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
-                    eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                    eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_agentes,desde_la_fecha=fechaDatos)
-                    
-            else:
-                print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
-                driver_masvoz.quit()
+    if(tipoInforme in lista_informes):
+        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        archivoDescargado = descargar_agentes(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        if(archivoDescargado!=False):
+            hora_inicio = time.replace(hora_inicio,second=0)
+            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            largo = 0
+            largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
+            if largo>3:
+                acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
+                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_agentes,desde_la_fecha=fechaDatos)
+                
+        else:
+            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
 
-            lista_informes.remove(tipoInforme)
-   
-        #Empiezo por la parte de la web que dice Detalles
-        print('Cierro y abro navegador, porque no deja descargar mas exportados en la misma sesión')
-        driver_masvoz.quit()
-       
+        lista_informes.remove(tipoInforme)
+
+
+
+    """
+    IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
+    """
+    tipoInforme = 'listado_llamadas'
+    columnas_unicas = ['ID Llamada','Servicio','Cuenta','Fecha']
+    archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')      
        
     if any(item in lista_informes for item in ['listado_llamadas']):
-        print(f'Abriendo web MasVoz')
-        driver_masvoz = obtener_web_masvoz('Detalle')    
-        #Compruebo si la función obtener_web_masvoz me ha entregado un navegador o un False, en caso de ser false es que no pudo abrir la web, si ese asi, relanzo la función nuevamente
-        if(driver_masvoz==False):
-            print(f'No se pudo tener acceso a la web de MasVoz, se vuelve a intentar en {segundos_de_espera} segundos')
-            sleep(segundos_de_espera)
-            #!Importante, añadir en la siguiente linea en listas_informe, los nuevos informes
-            robot_informes_masvoz(fecha_hora_inicio=fecha_hora_inicio,lista_informes=lista_informes)  
-   
-   
-        """
-        IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
-        """
-        tipoInforme = 'listado_llamadas'
-        columnas_unicas = ['ID Llamada','Servicio','Cuenta','Fecha']
-        archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
+        pagina,frame = obtener_web_masvoz('DETALLES')    
+           
+
    
         if tipoInforme in lista_informes:
         # if(tipoInforme in lista_informes and fechaDatos == datetime.today().date()):
             print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-            archivoDescargado = descargar_listado_llamadas(driver=driver_masvoz,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+            archivoDescargado = descargar_listado_llamadas(frame,pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
             if(archivoDescargado!=False):
                 hora_inicio = time.replace(hora_inicio,second=0)
-                nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
                 insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
                 largo = 0
                 largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
                 if largo>3:
-                    mover_archivo(nombre_archivo = archivoDescargado, nombre_archivo_final= f'Informe_{tipoInforme}.csv', ruta_destino= ruta_destino)
                     acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado,formato_fecha='%d-%m-%Y')
                     eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
                     eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_agentes,desde_la_fecha=fechaDatos)
@@ -2025,7 +1858,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
                 largo = 0
                 largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
                 if largo>3:
-                    mover_archivo(nombre_archivo = archivoDescargado, nombre_archivo_final= f'Informe_{tipoInforme}.csv', ruta_destino= ruta_destino)
                     acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado,formato_fecha='%d-%m-%Y')
                     eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
                     eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_agentes,desde_la_fecha=fechaDatos)
@@ -2102,8 +1934,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
                 insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos,separacion=',')
                 largo = 0
                 largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
-                if largo>3:
-                    mover_archivo(nombre_archivo = archivoDescargado, nombre_archivo_final= f'Informe_{tipoInforme}.csv', ruta_destino= ruta_destino)
             else:
                 print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
                 driver_masvoz.quit()
