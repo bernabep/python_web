@@ -573,7 +573,13 @@ def descargar_listado_llamadas(frame,pagina,hora_inicio:time, fecha_inicio=datet
    
     frame.locator(".a_tab_detalle").click()
     frame.locator('.btn.btn-block.btn-restablecer').click()
-    frame.get_by_text("Emitidas").click()
+    frame.locator('.btn.btn-block.advanced-filter-btn').click()
+    frame.locator('.form-incluir.form-inline').get_by_title("Emitidas").check()
+    frame.locator('.advance-group-hangupby').get_by_title("Todos").check()
+    frame.locator('.advance-group-include').get_by_title("Todos").check()
+
+    
+    
     if(fecha_inicio!=datetime.today().date()):
         frame.locator('#stime').clear()
         frame.locator('#stime').press_sequentially(str(str_fecha_inicio_filtro))
@@ -584,7 +590,6 @@ def descargar_listado_llamadas(frame,pagina,hora_inicio:time, fecha_inicio=datet
     frame.locator('#timepicker3').fill(str_hora_inicio)
     frame.locator('#timepicker4').clear()
     frame.locator('#timepicker4').fill(str_hora_fin)
-    frame.get_by_role('combobox').select_option('Agente')
     
     try:
         frame.get_by_role("button", name="Aceptar").click(timeout=1000) #pulso aceptar si muestra mensaje de que no hay datos
@@ -597,102 +602,11 @@ def descargar_listado_llamadas(frame,pagina,hora_inicio:time, fecha_inicio=datet
         frame.get_by_role("link", name="CSV").click(timeout=80000)
 
     download = download_info.value
-    download.save_as(os.path.join(ruta_destino,'Informe_agentes.csv'))
-    finalizado_ok = os.path.join(ruta_destino,'Informe_agentes.csv')
+    download.save_as(os.path.join(ruta_destino,'Informe_listado_llamadas.csv'))
+    finalizado_ok = os.path.join(ruta_destino,'Informe_listado_llamadas.csv')
 
     return finalizado_ok
     
-    ruta_elemento = '/html/body/div[12]/div[2]/div/div/div[2]/div/form[3]/label[3]'
-    name_elemento = 'emision_llamadas'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Selecciono Emititas')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.NAME, texto_buscado= name_elemento,accion= 'click')
-   
-    class_elemento = 'advanced-filter-btn'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Despliego Filtro Avanzado')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento, accion='click')
-
-  
-    sleep(segundos_de_espera)
-    ruta_elemento = '/html/body/div[11]/div[3]/div/div/div/div/div[2]/span[1]/div/label/input'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Hago clic en Colgado por Todos')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.XPATH, texto_buscado= ruta_elemento, accion='click')
-   
-    ruta_elemento = '/html/body/div[11]/div[3]/div/div/div/div/div[2]/span[2]/div/label/p'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Hago clic en Incluir Todos')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.XPATH, texto_buscado= ruta_elemento, accion='click')
-
-   
-    if(fecha_inicio!=datetime.today().date()):
-       
-        sleep(0.5)
-        id_elemento = 'etime'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print(f'Selecciono Periodo hasta: {str(str_fecha_fin_filtro)}')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion= 'escribir', texto_a_escribir= str(str_fecha_fin_filtro), primero_borrar=True)
-      
-        sleep(0.5)
-        id_elemento = 'stime'
-        if('silencioso' in globals()):
-            if(silencioso==False):
-                print(f'Selecciono Periodo Inicio: {str(str_fecha_inicio_filtro)}')
-        elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion= 'escribir', texto_a_escribir=str(str_fecha_inicio_filtro), primero_borrar=True)
-
-
-
-    id_elemento = 'timepicker3'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print(f'Escribo Tramo inicial: {str_hora_inicio}')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion='escribir', texto_a_escribir=str_hora_inicio, primero_borrar=True)
-
-    id_elemento = 'timepicker4'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print(f'Escribo Tramo final: {str_hora_fin}')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.ID, texto_buscado= id_elemento, accion='escribir', texto_a_escribir=str_hora_fin, primero_borrar=True)
-   
-    sleep(segundos_de_espera)    
-    ruta_elemento = '/html/body/div[6]/div[2]/div[3]/div/div[3]/button'
-    class_elemento = 'btn-buscar'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Empieza a buscar')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento, accion='click')
-
-    class_elemento = 'loading_main'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Buscando elemento loading')
-    elemento = esperar_elemento(driver= driver, buscar_por= By.CLASS_NAME, texto_buscado= class_elemento)
-    
-
-    sleep(segundos_de_espera)
-    ruta_elemento = '/html/body/div[6]/div[10]/div/div[6]/div/div[1]/div[4]/a[1]'
-    texto_elemento = 'CSV'
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Exporto en CSV')
-    hora_descarga = datetime.now() #Asigno Hora para buscar en las descargar
-    elemento = esperar_elemento(driver= driver, buscar_por= By.LINK_TEXT, texto_buscado= texto_elemento, accion='click')
-
-    if('silencioso' in globals()):
-        if(silencioso==False):
-            print('Espero que descargue el archivo')
-    archivo_encontrado = esperando_archivo_nuevo(hora_descarga=hora_descarga,nombre_archivo_comienza_por='Llamadas_del',extension='csv')
-    #devuelve el nombre del archivo encontrado
-    if (archivo_encontrado != None):
-        finalizado_ok = archivo_encontrado
-       
-    return finalizado_ok
 
 def descargar_listado_acd(driver,hora_inicio:time, fecha_inicio=datetime.today().date()):
     finalizado_ok = False
@@ -1826,7 +1740,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
 
    
         print('Cierro y abro navegador, porque no deja descargar mas exportados en la misma sesión')
-        driver_masvoz.quit()
 
    
     if any(item in lista_informes for item in ['listado_acd']):
