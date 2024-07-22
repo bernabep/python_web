@@ -24,11 +24,7 @@ logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
 #!ASIGNO VARIABLES GLOBALES
-lista_minutos=[1,31]
-lista_minutos = list(range(1,61,4))
-lista_informes_a_sacar=['colas','tramos','colas_tramos','actividad_por_agente']
-lista_informes_a_sacar=['colas','tramos','colas_tramos','actividad_por_agente','actividad_por_agente_cola','estados_por_agente','agentes','listado_llamadas','listado_acd']
-lista_informes_a_sacar=['skills_agentes']
+lista_minutos=[15,45]
 lista_informes_a_sacar=['colas','tramos','colas_tramos','actividad_por_agente','actividad_por_agente_cola','estados_por_agente','agentes','listado_llamadas','listado_acd','skills_agentes']
 silencioso=True #!Para que no muestre tantos print, hay que poner True
 segundos_de_espera = 3 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
@@ -65,7 +61,7 @@ tabla_listados_acd = 'vv_Informe_listado_acd'
 miCorreo= "bernabe.pando@konecta-group.com"
 destinatarioCorreo= "bernabe.pando@konecta-group.com"
 # miPass = "odix zpmr kvvy satr"
-miPass = "BSPfBSPf007*"
+miPass = "BSPfBSPf008*"
 
 url = 'https://manager.masvoz.es/'
 
@@ -1735,14 +1731,12 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
 def iniciarRobot():
     try:    
         ejecutar_en_minutos(funcion_a_lanzar=robot_informes_masvoz,lista_minutos=lista_minutos)
-        # lista = list(range(1, 60))
-        # ejecutar_en_minutos(funcion_a_lanzar=robot_informes_masvoz,lista_minutos=lista)
-       
+        
     except Exception as error:
         logger.error("Error:", exc_info=error)
-        # enviar_correo(asunto="Robot MasVoz",mensaje=f"Error:\n{error}\n",destinatario=destinatarioCorreo)
         print(f"#ERROR\n#ERROR\nReiniciando Robot\n#ERROR\n#ERROR")
         iniciarRobot()
+
 
 mi_playwright = lanzar_playwright()
 navegador = None
