@@ -25,10 +25,10 @@ logger.addHandler(stream_handler)
 
 #!ASIGNO VARIABLES GLOBALES
 lista_minutos=[1,31,32]
-lista_informes_a_sacar=['colas','tramos','colas_tramos','actividad_por_agente','actividad_por_agente_cola','estados_por_agente','agentes','listado_llamadas','listado_acd','skills_agentes']
 lista_informes_a_sacar=['colas','tramos','colas_tramos','actividad_por_agente']
 lista_informes_a_sacar=['colas','tramos','colas_tramos','actividad_por_agente','actividad_por_agente_cola','estados_por_agente','agentes','listado_llamadas','listado_acd']
 lista_informes_a_sacar=['skills_agentes']
+lista_informes_a_sacar=['colas','tramos','colas_tramos','actividad_por_agente','actividad_por_agente_cola','estados_por_agente','agentes','listado_llamadas','listado_acd','skills_agentes']
 silencioso=True #!Para que no muestre tantos print, hay que poner True
 segundos_de_espera = 3 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
 num_dias_para_acumular_colas=5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
@@ -1088,7 +1088,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
                 break
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha,lista_informes=['colas'])
+                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas'])
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
@@ -1112,11 +1112,10 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
                 break
             try:  
                 if(fecha.hour>=8):
-                    robot_informes_masvoz(fecha,lista_informes=['tramos'])
+                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['tramos'])
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
-    
             else:
                 fecha_inicio += timedelta(minutes=30)        
             return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
