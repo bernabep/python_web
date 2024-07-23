@@ -10,11 +10,10 @@ import mysql.connector as mysql
 import smtplib
 from email.message import EmailMessage
 import psutil
+import warnings
 
 #Desactivar algunos warning en la terminal
-import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-
 #Crea un Log de erroes
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -25,22 +24,90 @@ logger.addHandler(stream_handler)
 
 #!ASIGNO VARIABLES GLOBALES
 lista_minutos=[15,45]
+lista_colas = [
+'VY SY Italiano',
+'VY SY Frances',
+'VY SY Ingles',
+'VY SY Catalan',
+'VY SY Espa��ol',
+'VY S7 Visa It K',
+'VY S7 Visa Fr K',
+'VY S7 Visa Ca K',
+'VY S7 Visa En K',
+'VY S7 Visa Es K',
+'VY S6 PAE It K',
+'VY S6 PAE Fr K',
+'VY S6 PAE Ca K',
+'VY S6 PAE En K',
+'VY S6 PAE Es K',
+'VY S5 Reembolso It K',
+'VY S5 Reembolso Fr K',
+'VY S5 Reembolso En NDL K',
+'VY S5 Reembolso En K',
+'VY S5 Reembolso Es K',
+'VY S4 Lost & Found En K',
+'VY S4 Lost & Found Es K',
+'VY S0 Disruptions Ca K',
+'VY S0 Disruptions En K',
+'VY S0 Disruptions Es K',
+'VY S0 Disruptions Fr K',
+'VY S0 Disruptions It K',
+'VY S1 Grupos Ca K',
+'VY S1 Grupos En K',
+'VY S1 Grupos Es K',
+'VY S1 Grupos Fr K',
+'VY S1 Grupos It K',
+'VY S1 Profesional Ca K',
+'VY S1 Profesional En K',
+'VY S1 Profesional Es K',
+'VY S1 Profesional Fr K',
+'VY S1 Profesional It K',
+'VY S2 DoHop En',
+'VY S2 DoHop Es',
+'VY S2 Particular Ca K',
+'VY S2 Particular En K',
+'VY S2 Particular Es K',
+'VY S2 Particular Fr K',
+'VY S2 Particular It K',
+'VY S3 Ventas Ca K',
+'VY S3 Ventas En K',
+'VY S3 Ventas Es K',
+'VY S3 Ventas Fr K',
+'VY S3 Ventas It K',
+'VY S3 Club It K',
+'VY S3 Club Fr K',
+'VY S3 Club En K',
+'VY S3 Club Ca K',
+'VY S3 Club Es K',
+'VY S3 Premium It K',
+'VY S3 Premium Fr K',
+'S3 Premium En K',
+'VY S3 Premium Ca K',
+'VY S3 Premium Es K',
+'VY Campa��a Emision K ',
+'VY S5 Reembolso Ca K'
+]
 lista_informes_a_sacar=['colas','tramos','colas_tramos','actividad_por_agente','actividad_por_agente_cola','estados_por_agente','agentes','listado_llamadas','listado_acd','skills_agentes']
+lista_informes_a_sacar=['colas_individual_tramos']
 silencioso=True #!Para que no muestre tantos print, hay que poner True
 segundos_de_espera = 3 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
-num_dias_para_acumular_colas=5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
-num_dias_para_acumular_tramos=5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
-num_dias_para_acumular_colas_tramos=1 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
-num_dias_para_acumular_actividad_por_agente=5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
-num_dias_para_acumular_actividad_por_agente_cola=5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
-num_dias_para_acumular_estados_por_agente=3 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
-num_dias_para_acumular_agentes=5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
-num_dias_para_acumular_listado_llamadas=3 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
-num_dias_para_acumular_listado_acd=3 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
+segundos_de_espera_descarga = 60 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
+segundos_de_espera_descarga_aumentado = 120 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
+num_dias_para_acumular_colas = 5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
+num_dias_para_acumular_tramos = 5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
+num_dias_para_acumular_colas_tramos = 1 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
+num_dias_para_acumular_colas_individual_tramos = 22 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
+num_dias_para_acumular_actividad_por_agente = 5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
+num_dias_para_acumular_actividad_por_agente_cola = 5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
+num_dias_para_acumular_estados_por_agente = 3 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
+num_dias_para_acumular_agentes = 5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
+num_dias_para_acumular_listado_llamadas = 3 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
+num_dias_para_acumular_listado_acd = 3 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
 primer_tramo_del_dia = 8 #!Importante, necesario para saber si sacamos todos los tramos desde las 0 hrs o desde las 8 de la mañana por ejemplo
-ruta_destino = f"\\\\bcnsmb01.grupokonecta.corp\\SERVICIOS\\BOLL_COMUN_ANALISTAS\\Importar\\Robot" #!ruta de destino donde se almacenan los archivos definitivos
-ruta_destino = f"C:\\Users\\berna\\Desktop\\MUESTRA" #!ruta de destino donde se almacenan los archivos definitivos
 ruta_destino = rf"C:\Users\berna\Desktop\Masvoz" #!ruta de destino donde se almacenan los archivos definitivos
+ruta_destino = f"C:\\Users\\berna\\Desktop\\MUESTRA" #!ruta de destino donde se almacenan los archivos definitivos
+ruta_destino = f"\\\\bcnsmb01.grupokonecta.corp\\SERVICIOS\\BOLL_COMUN_ANALISTAS\\Importar\\Robot" #!ruta de destino donde se almacenan los archivos definitivos
+ruta_destino = rf"C:\Users\bpandofer\Desktop\Robot" #!ruta de destino donde se almacenan los archivos definitivos
 
 #?VARIABLES RELATIVAS A NAVICAT
 host="172.15.9.179"
@@ -50,6 +117,7 @@ database='bd_analistas_boll'
 tabla_colas= 'vv_Informe_colas'
 tabla_tramos= 'vv_Informe_tramos'
 tabla_colas_tramos= 'vv_Informe_colas_tramos'
+tabla_colas_indivual_tramos= 'vv_Informe_colas_individual_tramos'
 tabla_actividad_por_agente = 'vv_Informe_actividad_por_agente'
 tabla_estados_por_agente = 'vv_Informe_estados_por_agente'
 tabla_agentes = 'vv_Informe_agentes'
@@ -65,7 +133,6 @@ miPass = "BSPfBSPf008*"
 
 url = 'https://manager.masvoz.es/'
 
-
 # ---------------------------------------------------------------------------------------------------------------
 # MATAR PROCESO WINDOWS POR NOMBRE
 # ---------------------------------------------------------------------------------------------------------------
@@ -77,8 +144,8 @@ def matar_proceso(nombre_proceso):
                 proceso = psutil.Process(pid)
                 proceso.terminate()
                 # print(f"Proceso {nombre_proceso} (PID {pid}) terminado.")
-            except psutil.NoSuchProcess as e:
-                print(f"El proceso {nombre_proceso} no existe: {e}")
+            # except psutil.NoSuchProcess as e:
+                # print(f"El proceso {nombre_proceso} no existe: {e}")
             except psutil.AccessDenied as e:
                 print(f"No se pudo terminar el proceso {nombre_proceso}: {e}")
             except Exception as e:
@@ -211,11 +278,11 @@ def descargar_colas_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=datetime.
 
     frame.locator('#int_timepicker_b_4').fill(str_hora_fin)
     frame.get_by_role('combobox').select_option('Cola')
-    frame.get_by_text("Buscar").click(timeout=60000)
+    frame.get_by_text("Buscar").click(timeout=segundos_de_espera_descarga*1000)
     
     # Empieza a descargar y espera el archivo de descarga
-    with pagina.expect_download(timeout=60000) as download_info:
-        frame.get_by_role("link", name="CSV").click(timeout=80000)
+    with pagina.expect_download(timeout=segundos_de_espera_descarga*1000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=segundos_de_espera_descarga*1000)
 
     download = download_info.value
     nombre_archivo = os.path.join(ruta_destino,'Informe_colas.csv')
@@ -225,7 +292,7 @@ def descargar_colas_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=datetime.
 
     return finalizado_ok
 
-def descargar_tramos_masmoz(frame,pagina,hora_inicio:time,fecha_inicio=datetime.today().date()):
+def descargar_tramos_masmoz(frame,pagina,fecha_inicio=datetime.today().date()):
     finalizado_ok = False
    
    
@@ -235,15 +302,6 @@ def descargar_tramos_masmoz(frame,pagina,hora_inicio:time,fecha_inicio=datetime.
     fecha_fin_filtro = fecha_inicio
     str_fecha_fin_filtro = fecha_fin_filtro.strftime("%d-%m-%Y")
 
-    hora_inicio = hora_inicio
-    str_hora_inicio = hora_inicio.strftime("%H:%M:%S")
-    tiempo_a_sumar = timedelta(minutes=29, seconds=59)
-    fecha_hora_inicio = datetime.combine(fecha_inicio_filtro,hora_inicio)
-
-    horaFin = fecha_hora_inicio + tiempo_a_sumar
-    horaFin = horaFin.time()
-    str_hora_fin = horaFin.strftime("%H:%M:%S")    
-   
     str_hora_inicio = '00:00:00'
     str_hora_fin = '23:59:59'  
     
@@ -259,18 +317,15 @@ def descargar_tramos_masmoz(frame,pagina,hora_inicio:time,fecha_inicio=datetime.
         frame.locator('#etime').clear()
         frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
         frame.get_by_text("Periodo desde : : hasta : : Recibidas Emitidas Llamadas SMS").first.click()
- 
-    frame.locator('#int_timepicker_a_4').fill('00:00:00')
-    frame.locator('#int_timepicker_b_4').fill('23:59:59')
     
     frame.locator('#int_timepicker_a_4').fill(str(str_hora_inicio))
     frame.locator('#int_timepicker_b_4').fill(str(str_hora_fin))
     frame.get_by_role('combobox').select_option('Franjas de 30 minutos')
-    frame.get_by_text("Buscar").click(timeout=60000)
+    frame.get_by_text("Buscar").click(timeout=segundos_de_espera_descarga*1000)
  
     # Empieza a descargar y espera el archivo de descarga
-    with pagina.expect_download(timeout=60000) as download_info:
-        frame.get_by_role("link", name="CSV").click(timeout=80000)
+    with pagina.expect_download(timeout=segundos_de_espera_descarga*1000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=segundos_de_espera_descarga*1000)
 
     download = download_info.value
     nombre_archivo = os.path.join(ruta_destino,'Informe_tramos.csv')
@@ -301,10 +356,6 @@ def descargar_colas_tramos_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=da
     frame.locator(".a_tab_colas").click()
 
     if(fecha_inicio!=datetime.today().date()):
-        # frame.locator('#stime').clear()
-        # frame.locator('#stime').press_sequentially(str(str_fecha_inicio_filtro))
-        # frame.locator('#etime').clear()
-        # frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
         frame.locator('#etime').clear()
         frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
         frame.get_by_text("Periodo desde : : hasta : : Recibidas Emitidas Llamadas SMS").first.click()
@@ -314,17 +365,14 @@ def descargar_colas_tramos_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=da
         frame.locator('#etime').clear()
         frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
 
-    frame.locator('#int_timepicker_a_4').fill('00:00:00')
-    frame.locator('#int_timepicker_b_4').fill('23:59:59')
-    
     frame.locator('#int_timepicker_a_4').fill(str(str_hora_inicio))
     frame.locator('#int_timepicker_b_4').fill(str(str_hora_fin))
     frame.get_by_role('combobox').select_option('Cola')
-    frame.get_by_text("Buscar").click(timeout=60000)
+    frame.get_by_text("Buscar").click(timeout=segundos_de_espera_descarga*1000)
     
     # Empieza a descargar y espera el archivo de descarga
-    with pagina.expect_download(timeout=60000) as download_info:
-        frame.get_by_role("link", name="CSV").click(timeout=80000)
+    with pagina.expect_download(timeout=segundos_de_espera_descarga*1000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=segundos_de_espera_descarga*1000)
 
     download = download_info.value
     nombre_archivo = os.path.join(ruta_destino,'Informe_colas_tramos.csv')
@@ -334,8 +382,65 @@ def descargar_colas_tramos_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=da
 
     return finalizado_ok
 
+def descargar_colas_individual_tramos_masvoz(frame,pagina,fecha_inicio=datetime.today().date(),cola='Todas las Colas'):
+    finalizado_ok = False    
+   
+    fecha_inicio_filtro = fecha_inicio
+    str_fecha_inicio_filtro = fecha_inicio_filtro.strftime("%d-%m-%Y")
+   
+    fecha_fin_filtro = fecha_inicio
+    str_fecha_fin_filtro = fecha_fin_filtro.strftime("%d-%m-%Y")
 
-def descargar_actividad_por_agente(frame,pagina,hora_inicio:time,fecha_inicio=datetime.today().date()):
+    str_hora_inicio = '00:00:00'
+    str_hora_fin = '23:59:59'  
+
+
+    frame.locator(".a_tab_colas").click()
+    frame.locator('.btn.btn-block.btn-restablecer').click()
+    
+    if(fecha_inicio!=datetime.today().date()):
+        frame.locator('#etime').clear()
+        frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
+        frame.get_by_text("Periodo desde : : hasta : : Recibidas Emitidas Llamadas SMS").first.click()
+        frame.locator('#stime').clear()
+        frame.locator('#stime').press_sequentially(str(str_fecha_inicio_filtro))
+        frame.get_by_text("Periodo desde : : hasta : : Recibidas Emitidas Llamadas SMS").first.click()
+        frame.locator('#etime').clear()
+        frame.locator('#etime').press_sequentially(str(str_fecha_fin_filtro))
+
+    frame.locator('#int_timepicker_a_4').fill(str(str_hora_inicio))
+    frame.locator('#int_timepicker_b_4').fill(str(str_hora_fin))
+    frame.get_by_role('combobox').select_option('Franjas de 30 minutos')
+
+    #compruebo si filtro avanzado está desplegado
+    try: 
+        frame.locator(".btn-group.bootstrap-select.show-tick.adv-colas.large-select").first.click(timeout=segundos_de_espera*1000)
+    except:
+        #muestro filtro avanzado
+        frame.locator('.btn.btn-block.advanced-filter-btn').click()
+        frame.locator(".btn-group.bootstrap-select.show-tick.adv-colas.large-select").first.click()
+    else:
+        #aplico filtro de cola
+        frame.get_by_role("option",name=cola).first.click()
+
+
+    #busca resultados
+    frame.get_by_text("Buscar").click(timeout=segundos_de_espera_descarga*1000)
+        
+   
+    # Empieza a descargar y espera el archivo de descarga
+    with pagina.expect_download(timeout=segundos_de_espera_descarga*1000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=segundos_de_espera_descarga*1000)
+
+    download = download_info.value
+    nombre_archivo = os.path.join(ruta_destino,'Informe_colas_individual_tramos.csv')
+    download.save_as(nombre_archivo)
+    finalizado_ok = nombre_archivo
+    print(f"Se ha exportado la cola {cola} {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} ")
+
+    return finalizado_ok
+
+def descargar_actividad_por_agente(frame,pagina,fecha_inicio=datetime.today().date()):
     finalizado_ok = False
       
     fecha_inicio_filtro = fecha_inicio
@@ -344,13 +449,6 @@ def descargar_actividad_por_agente(frame,pagina,hora_inicio:time,fecha_inicio=da
     fecha_fin_filtro = fecha_inicio
     str_fecha_fin_filtro = fecha_fin_filtro.strftime("%d-%m-%Y")
 
-    hora_inicio = hora_inicio
-    tiempo_a_sumar = timedelta(minutes=29, seconds=59)
-    fecha_hora_inicio = datetime.combine(fecha_inicio_filtro,hora_inicio)
-
-    horaFin = fecha_hora_inicio + tiempo_a_sumar
-    horaFin = horaFin.time()
-    
     str_hora_inicio = '00:00:00'
     str_hora_fin = '23:59:59'  
 
@@ -373,10 +471,10 @@ def descargar_actividad_por_agente(frame,pagina,hora_inicio:time,fecha_inicio=da
     except:
         pass
 
-    frame.get_by_text("Buscar").click(timeout=60000)
+    frame.get_by_text("Buscar").click(timeout=segundos_de_espera_descarga*1000)
     # Empieza a descargar y espera el archivo de descarga
-    with pagina.expect_download(timeout=60000) as download_info:
-        frame.get_by_role("link", name="CSV").click(timeout=80000)
+    with pagina.expect_download(timeout=segundos_de_espera_descarga*1000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=segundos_de_espera_descarga*1000)
 
     download = download_info.value
     nombre_archivo = os.path.join(ruta_destino,'Informe_actividad_por_agente.csv')
@@ -386,7 +484,7 @@ def descargar_actividad_por_agente(frame,pagina,hora_inicio:time,fecha_inicio=da
 
     return finalizado_ok
 
-def descargar_actividad_por_agente_cola (frame,pagina,hora_inicio:time,fecha_inicio=datetime.today().date()):
+def descargar_actividad_por_agente_cola (frame,pagina,fecha_inicio=datetime.today().date()):
     finalizado_ok = False
       
     fecha_inicio_filtro = fecha_inicio
@@ -394,15 +492,6 @@ def descargar_actividad_por_agente_cola (frame,pagina,hora_inicio:time,fecha_ini
    
     fecha_fin_filtro = fecha_inicio
     str_fecha_fin_filtro = fecha_fin_filtro.strftime("%d-%m-%Y")
-
-    hora_inicio = hora_inicio
-    str_hora_inicio = hora_inicio.strftime("%H:%M:%S")
-    tiempo_a_sumar = timedelta(minutes=29, seconds=59)
-    fecha_hora_inicio = datetime.combine(fecha_inicio_filtro,hora_inicio)
-
-    horaFin = fecha_hora_inicio + tiempo_a_sumar
-    horaFin = horaFin.time()
-    str_hora_fin = horaFin.strftime("%H:%M:%S")    
    
     str_hora_inicio = '00:00:00'
     str_hora_fin = '23:59:59'  
@@ -426,10 +515,10 @@ def descargar_actividad_por_agente_cola (frame,pagina,hora_inicio:time,fecha_ini
     except:
         pass
 
-    frame.get_by_text("Buscar").click(timeout=60000)
+    frame.get_by_text("Buscar").click(timeout=segundos_de_espera_descarga*1000)
     # Empieza a descargar y espera el archivo de descarga
-    with pagina.expect_download(timeout=60000) as download_info:
-        frame.get_by_role("link", name="CSV").click(timeout=80000)
+    with pagina.expect_download(timeout=segundos_de_espera_descarga*1000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=segundos_de_espera_descarga*1000)
 
     download = download_info.value
     nombre_archivo = os.path.join(ruta_destino,'Informe_actividad_por_agente_cola.csv')
@@ -439,26 +528,16 @@ def descargar_actividad_por_agente_cola (frame,pagina,hora_inicio:time,fecha_ini
 
     return finalizado_ok
 
-def descargar_estados_por_agente(frame,pagina,hora_inicio:time,fecha_inicio=datetime.today().date()):
+def descargar_estados_por_agente(frame,pagina,fecha_inicio=datetime.today().date()):
     #Solo deja descargar una vez, para saltar esta limitación hay que volver abrir el navegador    
     finalizado_ok = False
-   
-   
+      
     fecha_inicio_filtro = fecha_inicio
     str_fecha_inicio_filtro = fecha_inicio_filtro.strftime("%d-%m-%Y")
    
     fecha_fin_filtro = fecha_inicio
     str_fecha_fin_filtro = fecha_fin_filtro.strftime("%d-%m-%Y")
 
-    hora_inicio = hora_inicio
-    str_hora_inicio = hora_inicio.strftime("%H:%M:%S")
-    tiempo_a_sumar = timedelta(minutes=29, seconds=59)
-    fecha_hora_inicio = datetime.combine(fecha_inicio_filtro,hora_inicio)
-
-    horaFin = fecha_hora_inicio + tiempo_a_sumar
-    horaFin = horaFin.time()
-    str_hora_fin = horaFin.strftime("%H:%M:%S")    
-   
     str_hora_inicio = '00:00:00'
     str_hora_fin = '23:59:59'  
     
@@ -480,10 +559,10 @@ def descargar_estados_por_agente(frame,pagina,hora_inicio:time,fecha_inicio=date
     except:
         pass
 
-    frame.get_by_text("Buscar").click(timeout=60000)
+    frame.get_by_text("Buscar").click(timeout=segundos_de_espera_descarga*1000)
     # Empieza a descargar y espera el archivo de descarga
-    with pagina.expect_download(timeout=60000) as download_info:
-        frame.get_by_role("link", name="CSV").click(timeout=80000)
+    with pagina.expect_download(timeout=segundos_de_espera_descarga*1000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=segundos_de_espera_descarga*1000)
 
     download = download_info.value
     nombre_archivo = os.path.join(ruta_destino,'Informe_estados_por_agente.csv')
@@ -493,9 +572,8 @@ def descargar_estados_por_agente(frame,pagina,hora_inicio:time,fecha_inicio=date
 
     return finalizado_ok
 
-def descargar_agentes(frame,pagina,hora_inicio:time,fecha_inicio=datetime.today().date()):
-    finalizado_ok = False
-   
+def descargar_agentes(frame,pagina,fecha_inicio=datetime.today().date()):
+    finalizado_ok = False   
    
     fecha_inicio_filtro = fecha_inicio
     str_fecha_inicio_filtro = fecha_inicio_filtro.strftime("%d-%m-%Y")
@@ -503,15 +581,6 @@ def descargar_agentes(frame,pagina,hora_inicio:time,fecha_inicio=datetime.today(
     fecha_fin_filtro = fecha_inicio
     str_fecha_fin_filtro = fecha_fin_filtro.strftime("%d-%m-%Y")
 
-    hora_inicio = hora_inicio
-    str_hora_inicio = hora_inicio.strftime("%H:%M:%S")
-    tiempo_a_sumar = timedelta(minutes=29, seconds=59)
-    fecha_hora_inicio = datetime.combine(fecha_inicio_filtro,hora_inicio)
-
-    horaFin = fecha_hora_inicio + tiempo_a_sumar
-    horaFin = horaFin.time()
-    str_hora_fin = horaFin.strftime("%H:%M:%S")    
-   
     str_hora_inicio = '00:00:00'
     str_hora_fin = '23:59:59'  
 
@@ -534,10 +603,10 @@ def descargar_agentes(frame,pagina,hora_inicio:time,fecha_inicio=datetime.today(
     except:
         pass
 
-    frame.get_by_text("Buscar").click(timeout=60000)
+    frame.get_by_text("Buscar").click(timeout=segundos_de_espera_descarga*1000)
     # Empieza a descargar y espera el archivo de descarga
-    with pagina.expect_download(timeout=60000) as download_info:
-        frame.get_by_role("link", name="CSV").click(timeout=80000)
+    with pagina.expect_download(timeout=segundos_de_espera_descarga*1000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=segundos_de_espera_descarga*1000)
 
     download = download_info.value
     nombre_archivo = os.path.join(ruta_destino,'Informe_agentes.csv')
@@ -547,7 +616,7 @@ def descargar_agentes(frame,pagina,hora_inicio:time,fecha_inicio=datetime.today(
 
     return finalizado_ok
  
-def descargar_listado_llamadas(frame,pagina,hora_inicio:time, fecha_inicio=datetime.today().date()):
+def descargar_listado_llamadas(frame,pagina,fecha_inicio=datetime.today().date()):
     finalizado_ok = False
 
     fecha_inicio_filtro = fecha_inicio
@@ -565,15 +634,6 @@ def descargar_listado_llamadas(frame,pagina,hora_inicio:time, fecha_inicio=datet
     dia = dia.lstrip('0')
     mes = mes.lstrip('0')
     str_fecha_fin_filtro = f"{dia}-{mes}-{año}"
-
-    hora_inicio = hora_inicio
-    str_hora_inicio = hora_inicio.strftime("%H:%M:%S")
-    tiempo_a_sumar = timedelta(minutes=29, seconds=59)
-    fecha_hora_inicio = datetime.combine(fecha_inicio_filtro,hora_inicio)
-
-    horaFin = fecha_hora_inicio + tiempo_a_sumar
-    horaFin = horaFin.time()
-    str_hora_fin = horaFin.strftime("%H:%M:%S")    
 
     str_hora_inicio = '00:00:00'
     str_hora_fin = '23:59:59'  
@@ -595,8 +655,6 @@ def descargar_listado_llamadas(frame,pagina,hora_inicio:time, fecha_inicio=datet
     frame.locator('.form-incluir.form-inline').get_by_title("Emitidas").check()
     frame.locator('.advance-group-hangupby').get_by_title("Todos").check()
     frame.locator('.advance-group-include').get_by_title("Todos").check()
-
-    
     
     if(fecha_inicio!=datetime.today().date()):
         frame.locator('#etime').clear()
@@ -614,11 +672,11 @@ def descargar_listado_llamadas(frame,pagina,hora_inicio:time, fecha_inicio=datet
     except:
         pass
 
-    frame.get_by_text("Buscar").click(timeout=60000)
+    frame.get_by_text("Buscar").click(timeout=segundos_de_espera_descarga*1000)
     
     # Empieza a descargar y espera el archivo de descarga
-    with pagina.expect_download(timeout=60000) as download_info:
-        frame.get_by_role("link", name="CSV").click(timeout=80000)
+    with pagina.expect_download(timeout=segundos_de_espera_descarga*1000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=segundos_de_espera_descarga*1000)
 
     download = download_info.value
     nombre_archivo = os.path.join(ruta_destino,'Informe_listado_llamadas.csv')
@@ -629,10 +687,8 @@ def descargar_listado_llamadas(frame,pagina,hora_inicio:time, fecha_inicio=datet
     return finalizado_ok
         
 
-def descargar_listado_acd(frame,pagina,hora_inicio:time, fecha_inicio=datetime.today().date()):
+def descargar_listado_acd(frame,pagina,fecha_inicio=datetime.today().date()):
     finalizado_ok = False
-     
-
     
     fecha_inicio_filtro = fecha_inicio
     str_fecha_inicio_filtro = fecha_inicio_filtro.strftime("%d-%m-%Y")
@@ -649,15 +705,6 @@ def descargar_listado_acd(frame,pagina,hora_inicio:time, fecha_inicio=datetime.t
     dia = dia.lstrip('0')
     mes = mes.lstrip('0')
     str_fecha_fin_filtro = f"{dia}-{mes}-{año}"
-
-    hora_inicio = hora_inicio
-    str_hora_inicio = hora_inicio.strftime("%H:%M:%S")
-    tiempo_a_sumar = timedelta(minutes=29, seconds=59)
-    fecha_hora_inicio = datetime.combine(fecha_inicio_filtro,hora_inicio)
-
-    horaFin = fecha_hora_inicio + tiempo_a_sumar
-    horaFin = horaFin.time()
-    str_hora_fin = horaFin.strftime("%H:%M:%S")    
 
     str_hora_inicio = '00:00:00'
     str_hora_fin = '23:59:59'  
@@ -681,18 +728,17 @@ def descargar_listado_acd(frame,pagina,hora_inicio:time, fecha_inicio=datetime.t
     except:
         pass
 
-    frame.get_by_text("Buscar").click(timeout=60000)
+    frame.get_by_text("Buscar").click(timeout=segundos_de_espera_descarga*1000)
     
     # Empieza a descargar y espera el archivo de descarga
-    with pagina.expect_download(timeout=60000) as download_info:
-        frame.get_by_role("link", name="CSV").click(timeout=80000)
+    with pagina.expect_download(timeout=segundos_de_espera_descarga_aumentado*1000) as download_info:
+        frame.get_by_role("link", name="CSV").click(timeout=segundos_de_espera_descarga_aumentado*1000)
 
     download = download_info.value
     nombre_archivo = os.path.join(ruta_destino,'Informe_listado_acd.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
     print(f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} ")
-
 
     return finalizado_ok
 
@@ -702,17 +748,14 @@ def descargar_skills_agentes(frame,pagina):
     frame.locator(".a_tab_skills_agents").click()
 
     # Empieza a descargar y espera el archivo de descarga
-    with pagina.expect_download(timeout=60000) as download_info:
-        frame.locator(".span12.filter-menu").get_by_role("button",name="Informe CSV").click(timeout=80000)
+    with pagina.expect_download(timeout=segundos_de_espera_descarga*1000) as download_info:
+        frame.locator(".span12.filter-menu").get_by_role("button",name="Informe CSV").click(timeout=segundos_de_espera_descarga*1000)
     
-        
-
     download = download_info.value
     nombre_archivo = os.path.join(ruta_destino,'Informe_listado_acd.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
     print(f"Se ha exportado {nombre_archivo}")
-
 
     return finalizado_ok
 
@@ -851,14 +894,6 @@ def eliminar_duplicados(archivo,columnas_unicas:list,separador=';',intentos=0):
             return True
         break
 
-   
-    # try:
-    #     df = pd.read_csv(filepath_or_buffer=archivo,sep=separador,header=0)
-    #     df = df.drop_duplicates(subset=columnas_unicas,keep='last') #Elimino duplicados, me quedo con el último
-    #     df.to_csv(path_or_buf=archivo,sep=separador,encoding="utf-8",index=False)
-    # except:
-    #     print(f'Hubo error al intentar eliminar duplicados del archivo {archivo}')
-
 def eliminar_registros_por_num_dias_atras(archivo,num_dias_atras:int,desde_la_fecha:datetime,separador=';',intentos=0):
     while (intentos<10):
         try:
@@ -968,7 +1003,7 @@ def obtener_tramos_faltantes_bd(tabla,fecha_inicio,fecha_fin,columna_fecha,colum
    
    
     ###Creo lista de fechas y horas de la bd navicat
-    query = f"SELECT DISTINCT `{columna_fecha}`, `{columna_tiempo}` FROM `{tabla}`"
+    query = f"SELECT DISTINCT `{columna_fecha}`, `{columna_tiempo}` FROM `{tabla}` WHERE `{columna_fecha}` BETWEEN '{fecha_inicio.strftime('%Y-%m-%d')}' AND '{fecha_fin.strftime('%Y-%m-%d')}'"
     conexion_db = obtener_conexion_bd(host,user,password,database)
     resultado_query = lanzar_query(conexion_db=conexion_db,query=query)
 
@@ -1065,6 +1100,81 @@ def obtener_tramos_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_fin,colum
         print(f'En el archivo {archivo} no faltan fechas ni tramos entre {fecha_inicio} and {fecha_fin}')
     return lista_fechas_tramos_faltantes
            
+def obtener_tramos_con_cola_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_fin,columna_fecha,separador=';',formato_fecha='%Y-%m-%d'):
+   
+    lista_fechas_tramos_requeridas=[]
+    lista_fechas_tramos_acumuladas=[]
+    lista_fechas_tramos_faltantes=[]
+   
+    ###Creo lista de fechas y horas entre fecha_inicio y fecha_fin
+    #elimino segundo y milisegundos a fechas
+    fecha_inicio = datetime.replace(fecha_inicio,second=0)
+    fecha_inicio = datetime.replace(fecha_inicio,microsecond=0)
+   
+    fecha_fin = datetime.replace(fecha_fin,second=0)
+    fecha_fin = datetime.replace(fecha_fin,microsecond=0)
+    ahora = datetime.now()-timedelta(minutes=30)
+   
+    #Se busca el tramo ya cerrado, si son 15:25, exporta tramo de 14:30 a 14:59:59
+
+    horaActual = ahora.hour
+    minutoActual = ahora.minute
+   
+    tiempo_delta = timedelta(hours=24)
+    fecha_inicio = datetime.combine(datetime.date(fecha_inicio),time(hour=23,minute=30))
+    fecha_fin = datetime.combine(datetime.date(fecha_fin),time(hour=horaActual,minute=minutoActual))
+           
+       
+    for cola in lista_colas:
+        fecha_inicioWhile = fecha_inicio
+        while fecha_inicioWhile <= fecha_fin:
+            if(fecha_inicioWhile.hour>=primer_tramo_del_dia):#se añade la fecha y hora si es superior a la variable primer_tramo_del_dia, normalmente seteado en 8 para que exporte tramos de 8 hasta 23,30 hrs.
+                lista_fechas_tramos_requeridas.append([fecha_inicioWhile,cola])
+            fecha_inicioWhile += tiempo_delta
+       
+    ###Creo lista de fechas y horas del acumulado
+    if os.path.exists(archivo):
+        df = pd.read_csv(archivo,sep=separador)
+
+        df = df[[columna_fecha,'Cola']]
+        columnas_unicas = [columna_fecha,'Cola']       
+   
+        df = df.drop_duplicates(subset=columnas_unicas,keep='last')
+   
+        #Recorro las fechas obtenidas del archivo acumulado y las transforma a datetime
+        for fila in df.itertuples():
+            fecha = datetime.strptime(fila[1].split(" ")[0],formato_fecha)#Obtengo la fecha de la columna Fecha
+            hora = time(hour=23,minute=30)
+            lista_fechas_tramos_acumuladas.append([datetime.combine(fecha,hora),fila[2]])
+
+       
+       
+    
+    for fecha,cola in lista_fechas_tramos_requeridas:
+        encontrado = False
+        for fecha1,cola1 in lista_fechas_tramos_acumuladas:
+            if cola == cola1:
+                if fecha == fecha1:
+                    encontrado = True
+                    break
+                    
+            
+
+        if not encontrado:
+            lista_fechas_tramos_faltantes.append([fecha,cola])
+    lista_fechas_tramos_faltantes.sort()
+    if (len(lista_fechas_tramos_faltantes)>0):
+        print(f'En el archivo {archivo} faltan las siguientes fechas:')
+        for fecha in reversed(lista_fechas_tramos_faltantes):
+            print(f'{fecha[0].strftime(format='%d-%m-%Y')} cola {fecha[1]} ')
+        print(f"Falan {len(lista_fechas_tramos_faltantes)} exportados por cola_individual_tramo")
+
+    else:
+        print(f'En el archivo {archivo} no faltan fechas ni tramos entre {fecha_inicio} and {fecha_fin}')
+    
+    return lista_fechas_tramos_faltantes
+           
+
 def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
     tipoInforme = 'colas'
     if(tipoInforme in lista_informes):
@@ -1279,9 +1389,33 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
             else:
                 fecha_inicio += timedelta(minutes=30)
             return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
+
+    tipoInforme = 'colas_individual_tramos'
+    if(tipoInforme in lista_informes):   
+        print('Buscando tramos que faltan en el colas_individual_tramos')
+        lista_fechas_tramos_faltantes= []
+        archivo = os.path.join(ruta_destino,'Informe_colas_individual_tramos_acumulado.csv')
+        fecha_fin = datetime.now()-timedelta(minutes=30)
+        fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_colas_individual_tramos)
+        
+        lista_fechas_tramos_faltantes = obtener_tramos_con_cola_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha')
+        lista_fechas_tramos_faltantes.sort()
+        for fecha,cola in reversed(lista_fechas_tramos_faltantes):
+            if datetime.now().minute + 1 in lista_minutos:
+                print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
+                break
+            try:  
+                if(fecha.hour>=primer_tramo_del_dia):
+                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas_individual_tramos'],cola = cola)
+            except Exception as error:
+                logger.error("Errror:", exc_info=error)
+                print(f'Volvemos a intentar con la fecha {fecha_inicio}')
+            else:
+                fecha_inicio += timedelta(minutes=30)        
+            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
+    
         
 def ejecutar_en_minutos(funcion_a_lanzar,lista_minutos=[1,31]):
-
     matar_proceso('CHROME')
     primeraVuelta = True
     while True:
@@ -1311,14 +1445,12 @@ def enviar_correo(asunto, mensaje, destinatario):
         servidor.starttls()
         servidor.login(miCorreo, miPass)
         # Creacion del mensaje
-
        
         message = EmailMessage()
         message["From"] = miCorreo
         message["To"] = destinatario
         message["Subject"] = asunto
         message.set_content(mensaje)
-
 
         # Envio del correo
         servidor.send_message(message)
@@ -1382,7 +1514,7 @@ def prueba_crear_tabla_fija():
     resultado = lanzar_query(db,query)
     print (resultado)
 
-def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30),lista_informes=lista_informes_a_sacar):
+def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30),lista_informes=lista_informes_a_sacar, cola = None):
     global navegador
     global pagina
     global frame
@@ -1412,9 +1544,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         print(f'Se está solicitando actualizar con fecha {fecha_hora_inicio_tramo} y ese tramo aun no está cerrado ')
         return True
         # raise ValueError("La Fecha no puede ser superior a ahora mismo")
-        
  
-
 
     """
     IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
@@ -1454,7 +1584,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
     if(tipoInforme in lista_informes):
         print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
         obtener_web_masvoz()
-        archivoDescargado = descargar_tramos_masmoz(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        archivoDescargado = descargar_tramos_masmoz(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
             nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
@@ -1499,6 +1629,41 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
             print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
 
         lista_informes.remove(tipoInforme)
+
+        """
+    IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
+    """
+    if fecha_hora_inicio.date() == datetime.now().date():
+        print("No se exportan datos de Hoy en colas_individual_tramos")
+    else:
+        tipoInforme = 'colas_individual_tramos'
+        columnas_unicas = ['Categoría','Fecha','Cola']
+        archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
+
+
+        if(tipoInforme in lista_informes):
+            print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+            obtener_web_masvoz()
+
+            archivoDescargado = descargar_colas_individual_tramos_masvoz(frame=frame,pagina=pagina,fecha_inicio=fechaDatos,cola=cola)
+            if(archivoDescargado!=False):
+                hora_inicio = time.replace(hora_inicio,second=0)
+                nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
+                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Cola',dato=cola)
+                largo = 0
+                largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
+                if largo>3:
+                    acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
+                    eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                    eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_tramos,desde_la_fecha=fechaDatos)
+                    
+            else:
+                print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+
+        lista_informes.remove(tipoInforme)
+
             
     """
     IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
@@ -1510,7 +1675,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
     if(tipoInforme in lista_informes):
         print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
         obtener_web_masvoz()
-        archivoDescargado = descargar_actividad_por_agente(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        archivoDescargado = descargar_actividad_por_agente(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
             insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
@@ -1537,7 +1702,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
     if(tipoInforme in lista_informes):
         print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
         obtener_web_masvoz()
-        archivoDescargado = descargar_actividad_por_agente_cola(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        archivoDescargado = descargar_actividad_por_agente_cola(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
             nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
@@ -1570,7 +1735,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         pagina = None        
         navegador = None
         obtener_web_masvoz()
-        archivoDescargado = descargar_estados_por_agente(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        archivoDescargado = descargar_estados_por_agente(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
             insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
@@ -1603,7 +1768,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         pagina = None        
         navegador = None
         obtener_web_masvoz()
-        archivoDescargado = descargar_agentes(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        archivoDescargado = descargar_agentes(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
             insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
@@ -1632,7 +1797,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
     if any(item in lista_informes for item in ['listado_llamadas']):
         if tipoInforme in lista_informes:
             if(fechaDatos==datetime.today().date()) and datetime.now().hour <= 8:
-                print(f"Para {tipoInforme} aun no hay datos el {fechaDatos.strftime("%d-%m-%Y")}")
+                print(f"Para {tipoInforme} aun no hay datos el {fechaDatos.strftime('%d-%m-%Y')}")
             else:
                 #este informe solo deja descargar una vez, luego hay que cerrar el navegador
                 if pagina: pagina.close()
@@ -1640,7 +1805,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
                 navegador = None
                 obtener_web_masvoz('DETALLES')
                 print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-                archivoDescargado = descargar_listado_llamadas(frame,pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+                archivoDescargado = descargar_listado_llamadas(frame,pagina,fecha_inicio=fechaDatos)
                 if(archivoDescargado!=False and archivoDescargado != '0_Llamadas'):
                     hora_inicio = time.replace(hora_inicio,second=0)
                     insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
@@ -1671,7 +1836,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
    
         if tipoInforme in lista_informes:
             if(fechaDatos==datetime.today().date()) and datetime.now().hour <= 8:
-                print(f"Para {tipoInforme} aun no hay datos el {fechaDatos.strftime("%d-%m-%Y")}")
+                print(f"Para {tipoInforme} aun no hay datos el {fechaDatos.strftime('%d-%m-%Y')}")
             else:
                 #este informe solo deja descargar una vez, luego hay que cerrar el navegador
                 if pagina: pagina.close()
@@ -1679,7 +1844,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
                 navegador = None
                 obtener_web_masvoz('DETALLES')
                 print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-                archivoDescargado = descargar_listado_acd(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+                archivoDescargado = descargar_listado_acd(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
                 if(archivoDescargado!=False):
                     hora_inicio = time.replace(hora_inicio,second=0)
                     insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
@@ -1719,9 +1884,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
                 print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
 
             lista_informes.remove(tipoInforme)
- 
-
-   
    
     """
     IMPORTANTE Esto busca y exporta los tramos que faltan en los acumulados
@@ -1738,9 +1900,13 @@ def iniciarRobot():
         iniciarRobot()
 
 
-mi_playwright = lanzar_playwright()
-navegador = None
-pagina = None
-frame = None
-iniciarRobot()
-   
+#SOLO SE LANZA SI ESTE ES EL MODULO PRINCIPAL
+
+if __name__ == "__main__":
+
+    mi_playwright = lanzar_playwright()
+    navegador = None
+    pagina = None
+    frame = None
+    iniciarRobot()
+    
