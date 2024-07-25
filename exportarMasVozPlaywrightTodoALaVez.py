@@ -24,7 +24,6 @@ logger.addHandler(stream_handler)
 
 #!ASIGNO VARIABLES GLOBALES
 lista_minutos=[15,45]
-lista_minutos=[15,33]
 lista_colas = [
 'VY SY Italiano',
 'VY SY Frances',
@@ -161,12 +160,20 @@ def matar_proceso(nombre_proceso):
                         f"No se pudo terminar el proceso {nombre_proceso} con kill(): {e}"
                     )
 
-#para buscar por class usas .
-#para buscar por id usasa #
 def lanzar_playwright():
     return sync_playwright().start()
-def abrir_navegador(oculto=False):   
-    mi_playwright = lanzar_playwright() 
+    # try:
+    #     return sync_playwright().start()
+    # except Exception as e:
+    #     print(e)
+
+def mensaje(mensaje:str):
+    print(f"\n\n{'#'*(len(mensaje)+8)}\n### {mensaje} ###\n{'#'*(len(mensaje)+8)}\n")
+    
+def abrir_navegador(oculto=False,mi_playwright=None):   
+    if mi_playwright == None:
+        mi_playwright = lanzar_playwright() 
+        
     navegador = mi_playwright.chromium.launch(headless=oculto)
     return navegador
 
@@ -177,7 +184,7 @@ def abrir_pagina(navegador:Browser,url:str,resolucion=[1920,1080]):
     pagina.goto(url)    
     return pagina
 
-def obtener_web_masvoz(seccion='ESTADÍSTICAS',maximizado=False,navegador=None,pagina=None):
+def obtener_web_masvoz(seccion='ESTADÍSTICAS',maximizado=False,navegador=None,pagina=None,mi_playwright=None):
     
     """
     Puedes elegir la seccion en la cual abrir la web de MasVoz, ['INICIO','AGENDA','SKILLS','SUPERVISIÓN','ESTADÍSTICAS','DETALLES','CUENTA']
@@ -196,7 +203,9 @@ def obtener_web_masvoz(seccion='ESTADÍSTICAS',maximizado=False,navegador=None,p
     # driver = abrir_navegador()
     password = 'Konecta27!'
     if navegador == None:
-        navegador = abrir_navegador()
+        mi_playwright = lanzar_playwright()
+    if navegador == None:
+        navegador = abrir_navegador(mi_playwright=mi_playwright)
     
     if pagina == None:
         pagina = abrir_pagina(navegador=navegador,url=url)
@@ -238,7 +247,7 @@ def obtener_web_masvoz(seccion='ESTADÍSTICAS',maximizado=False,navegador=None,p
         if pagina: pagina.close()
         return False
        
-    return navegador,pagina,frame
+    return mi_playwright,navegador,pagina,frame
 
   
        
@@ -414,7 +423,7 @@ def descargar_colas_individual_tramos_masvoz(frame,pagina,fecha_inicio=datetime.
         #muestro filtro avanzado
         frame.locator('.btn.btn-block.advanced-filter-btn').click()
         frame.locator(".btn-group.bootstrap-select.show-tick.adv-colas.large-select").first.click()
-    else:
+    finally:
         #aplico filtro de cola
         frame.get_by_role("option",name=cola).first.click()
 
@@ -1159,10 +1168,10 @@ def obtener_tramos_con_cola_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_
             lista_fechas_tramos_faltantes.append([fecha,cola])
     lista_fechas_tramos_faltantes.sort()
     if (len(lista_fechas_tramos_faltantes)>0):
-        print(f'En el archivo {archivo} faltan las siguientes fechas:')
-        for fecha in reversed(lista_fechas_tramos_faltantes):
-            print(f'{fecha[0].strftime(format='%d-%m-%Y')} cola {fecha[1]} ')
-        print(f"Faltan {len(lista_fechas_tramos_faltantes)} exportados por cola_individual_tramo")
+        # print(f'En el archivo {archivo} faltan las siguientes fechas:')
+        # for fecha in reversed(lista_fechas_tramos_faltantes):
+        #     print(f'{fecha[0].strftime(format='%d-%m-%Y')} cola {fecha[1]} ')
+        print(f"En el archivo {archivo} faltan {len(lista_fechas_tramos_faltantes)} exportados")
 
     else:
         print(f'En el archivo {archivo} no faltan fechas ni tramos entre {fecha_inicio} and {fecha_fin}')
@@ -1170,7 +1179,7 @@ def obtener_tramos_con_cola_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_
     return lista_fechas_tramos_faltantes
            
 
-def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
+def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=None,pagina=None,frame=None,mi_playwright=None):
     tipoInforme = 'colas'
     if(tipoInforme in lista_informes):
         print('Buscando tramos que faltan en el acumulado colas')
@@ -1181,17 +1190,18 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
-                break
+                print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
+                return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas'])
+                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)        
-            # return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
+            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
     
 
     tipoInforme = 'tramos'
@@ -1206,16 +1216,16 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
                 print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
-                break
+                return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['tramos'])
+                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['tramos'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
             else:
                 fecha_inicio += timedelta(minutes=30)        
-            # return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
+            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
     
     
     tipoInforme = 'colas_tramos'
@@ -1229,17 +1239,17 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
                 print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
-                break
+                return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas_tramos'])
+                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas_tramos'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            # return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
+            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
     
     
     tipoInforme = 'actividad_por_agente'
@@ -1253,17 +1263,17 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
                 print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
-                break
+                return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha,lista_informes=['actividad_por_agente'])
+                    robot_informes_masvoz(fecha,lista_informes=['actividad_por_agente'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            # return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
+            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
     
     
     tipoInforme = 'actividad_por_agente_cola'
@@ -1277,17 +1287,17 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
                 print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
-                break
+                return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha,lista_informes=['actividad_por_agente_cola'])
+                    robot_informes_masvoz(fecha,lista_informes=['actividad_por_agente_cola'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            # return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
+            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
         
     
     tipoInforme = 'estados_por_agente'
@@ -1301,17 +1311,17 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
                 print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
-                break
+                return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha,lista_informes=['estados_por_agente'])
+                    robot_informes_masvoz(fecha,lista_informes=['estados_por_agente'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            # return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
+            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
     
     
     tipoInforme = 'agentes'
@@ -1325,17 +1335,17 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
                 print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
-                break
+                return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha,lista_informes=['agentes'])
+                    robot_informes_masvoz(fecha,lista_informes=['agentes'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            # return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
+            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
     
     
     tipoInforme = 'listado_llamadas'
@@ -1349,17 +1359,17 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
                 print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
-                break
+                return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha,lista_informes=['listado_llamadas'])
+                    robot_informes_masvoz(fecha,lista_informes=['listado_llamadas'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            # return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
+            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
     
     
     tipoInforme = 'listado_acd'
@@ -1373,17 +1383,17 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
                 print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
-                break
+                return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha,lista_informes=['listado_acd'])
+                    robot_informes_masvoz(fecha,lista_informes=['listado_acd'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            # return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
+            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
 
     tipoInforme = 'colas_individual_tramos'
     if(tipoInforme in lista_informes):   
@@ -1398,16 +1408,16 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar):
         for fecha,cola in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
                 print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
-                break
+                return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas_individual_tramos'],cola = cola)
+                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas_individual_tramos'],cola = cola,recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
             else:
                 fecha_inicio += timedelta(minutes=30)        
-            # return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
+            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
     
         
 def ejecutar_en_minutos(funcion_a_lanzar,lista_minutos=[1,31]):
@@ -1509,11 +1519,8 @@ def prueba_crear_tabla_fija():
     resultado = lanzar_query(db,query)
     print (resultado)
 
-def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30),lista_informes=lista_informes_a_sacar, cola = None):
-    # navegador,pagina,frame = obtener_web_masvoz()
-    navegador = None
-    pagina = None
-    frame = None
+def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30),lista_informes=lista_informes_a_sacar, cola = None,recuperar_datos=False,navegador=None,pagina=None,frame=None,mi_playwright=None):
+    
     #Si está fuera de horario, no exporta nada, primer_tramo_Del_dia está configurado en 9
     if(fecha_hora_inicio.hour<primer_tramo_del_dia):
         print(f'El tramo {fecha_hora_inicio.time()} está fuera del horario del servicio, el primer tramo es el de las {primer_tramo_del_dia}')
@@ -1551,7 +1558,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
 
     if(tipoInforme in lista_informes):
         print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-        navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
+        mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
         archivoDescargado = descargar_colas_masvoz(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
@@ -1567,7 +1574,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
         
-        lista_informes.remove(tipoInforme)
         
 
     """
@@ -1579,7 +1585,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
 
     if(tipoInforme in lista_informes):
         print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-        navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
+        mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
         archivoDescargado = descargar_tramos_masmoz(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
@@ -1596,7 +1602,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
 
-        lista_informes.remove(tipoInforme)
 
     """
     IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
@@ -1607,7 +1612,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
 
     if(tipoInforme in lista_informes):
         print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-        navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
+        mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
         archivoDescargado = descargar_colas_tramos_masvoz(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
@@ -1624,7 +1629,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
 
-        lista_informes.remove(tipoInforme)
 
         """
     IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
@@ -1640,7 +1644,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
             print("No se exportan datos de Hoy en colas_individual_tramos")
         else:
             print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-            navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
+            mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
 
             archivoDescargado = descargar_colas_individual_tramos_masvoz(frame=frame,pagina=pagina,fecha_inicio=fechaDatos,cola=cola)
             if(archivoDescargado!=False):
@@ -1659,7 +1663,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
             else:
                 print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
 
-        lista_informes.remove(tipoInforme)
 
             
     """
@@ -1671,7 +1674,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
 
     if(tipoInforme in lista_informes):
         print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-        navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
+        mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
         archivoDescargado = descargar_actividad_por_agente(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
@@ -1687,7 +1690,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
         
-        lista_informes.remove(tipoInforme)
             
     """
     IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
@@ -1698,7 +1700,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
 
     if(tipoInforme in lista_informes):
         print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-        navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
+        mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
         archivoDescargado = descargar_actividad_por_agente_cola(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
@@ -1715,7 +1717,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
 
-        lista_informes.remove(tipoInforme)
 
         
     """
@@ -1731,7 +1732,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         if pagina: pagina.close()
         pagina = None        
         # navegador = None
-        navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
+        mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
         archivoDescargado = descargar_estados_por_agente(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
@@ -1746,7 +1747,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
 
-        lista_informes.remove(tipoInforme)
 
    
 
@@ -1764,7 +1764,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         if pagina: pagina.close()
         pagina = None        
         # navegador = None
-        navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
+        mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
         archivoDescargado = descargar_agentes(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
@@ -1780,7 +1780,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
 
-        lista_informes.remove(tipoInforme)
 
 
 
@@ -1800,7 +1799,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
                 if pagina: pagina.close()
                 pagina = None        
                 # navegador = None
-                navegador,pagina,frame = obtener_web_masvoz(seccion='DETALLES',navegador=navegador,pagina=pagina)
+                mi_playwright,navegador,pagina,frame = obtener_web_masvoz(seccion='DETALLES',navegador=navegador,pagina=pagina)
                 print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
                 archivoDescargado = descargar_listado_llamadas(frame,pagina,fecha_inicio=fechaDatos)
                 if(archivoDescargado!=False and archivoDescargado != '0_Llamadas'):
@@ -1818,7 +1817,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
                 else:
                     print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
 
-                lista_informes.remove(tipoInforme)
 
    
     if any(item in lista_informes for item in ['listado_acd']):
@@ -1839,7 +1837,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
                 if pagina: pagina.close()
                 pagina = None        
                 # navegador = None
-                navegador,pagina,frame = obtener_web_masvoz(seccion='DETALLES',navegador=navegador,pagina=pagina)
+                mi_playwright,navegador,pagina,frame = obtener_web_masvoz(seccion='DETALLES',navegador=navegador,pagina=pagina)
                 print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
                 archivoDescargado = descargar_listado_acd(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
                 if(archivoDescargado!=False):
@@ -1855,7 +1853,6 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
                 else:
                     print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
                     
-                lista_informes.remove(tipoInforme)
 
 
     """
@@ -1870,7 +1867,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
    
         if(tipoInforme in lista_informes):
             print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-            navegador,pagina,frame = obtener_web_masvoz('SKILLS')
+            mi_playwright,navegador,pagina,frame = obtener_web_masvoz('SKILLS')
             archivoDescargado = descargar_skills_agentes(frame=frame,pagina=pagina)
             if(archivoDescargado):
                 hora_inicio = time.replace(hora_inicio,second=0)
@@ -1880,17 +1877,18 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
             else:
                 print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
 
-            lista_informes.remove(tipoInforme)
     pagina.close()
     pagina = None
     frame = None
-    # """
-    # IMPORTANTE Esto busca y exporta los tramos que faltan en los acumulados
-    # """  
-    # try:
-    #     exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar)
-    # except:
-    #     exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar)
+
+    if recuperar_datos:
+        """
+        IMPORTANTE Esto busca y exporta los tramos que faltan en los acumulados
+        """  
+        try:
+            exportar_tramos_faltantes(lista_informes=lista_informes,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
+        except:
+            exportar_tramos_faltantes(lista_informes=lista_informes,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
 
 
 def iniciarRobot():
@@ -1908,13 +1906,13 @@ def iniciarRobot():
 
 def lanzar_varios_robot_informes_masvoz():
     
-    proceso_colas = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['colas','tramos','colas_tramos']))
-    proceso_agentes = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['agentes']))
-    proceso_actividad_agentes = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['actividad_por_agente','actividad_por_agente_cola']))
-    proceso_estados_agente = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['estados_por_agente']))
-    proceso_listado_llamadas = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['listado_llamadas']))
-    proceso_listado_acd = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['listado_acd']))
-    proceso_skills_agentes = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['skills_agentes']))
+    proceso_colas = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['colas','tramos','colas_tramos'],None,None,None,None,None))
+    proceso_agentes = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['agentes'],None,None,None,None,None))
+    proceso_actividad_agentes = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['actividad_por_agente','actividad_por_agente_cola'],None,None,None,None,None))
+    proceso_estados_agente = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['estados_por_agente'],None,None,None,None,None))
+    proceso_listado_llamadas = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['listado_llamadas'],None,None,None,None,None))
+    proceso_listado_acd = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['listado_acd'],None,None,None,None,None))
+    proceso_skills_agentes = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['skills_agentes'],None,None,None,None,None))
     
     lista_procesos = {
                         proceso_colas,
@@ -1933,16 +1931,21 @@ def lanzar_varios_robot_informes_masvoz():
     for proceso in lista_procesos:
         proceso.join()
         
-    proceso_acumular_colas = threading.Thread(target=exportar_tramos_faltantes,args=([['colas','tramos','colas_tramos']]))
-    proceso_acumular_colas_individual = threading.Thread(target=exportar_tramos_faltantes,args=([['colas_individual_tramos']]))
-    proceso_acumular_agentes = threading.Thread(target=exportar_tramos_faltantes,args=([['agentes']]))
-    proceso_acumular_actividad_agentes = threading.Thread(target=exportar_tramos_faltantes,args=([['actividad_por_agente','actividad_por_agente_cola']]))
-    proceso_acumular_estados_agente = threading.Thread(target=exportar_tramos_faltantes,args=([['estados_por_agente']]))
-    proceso_acumular_listado_llamadas = threading.Thread(target=exportar_tramos_faltantes,args=([['listado_llamadas']]))
-    proceso_acumular_listado_acd = threading.Thread(target=exportar_tramos_faltantes,args=([['listado_llamadas']]))
+    proceso_acumular_colas = threading.Thread(target=exportar_tramos_faltantes,args=([['colas'],None,None,None,None]))
+    proceso_acumular_tramos = threading.Thread(target=exportar_tramos_faltantes,args=([['tramos'],None,None,None,None]))
+    proceso_acumular_colas_tramos = threading.Thread(target=exportar_tramos_faltantes,args=([['colas_tramos'],None,None,None,None]))
+    proceso_acumular_colas_individual = threading.Thread(target=exportar_tramos_faltantes,args=([['colas_individual_tramos'],None,None,None,None]))
+    proceso_acumular_agentes = threading.Thread(target=exportar_tramos_faltantes,args=([['agentes'],None,None,None,None]))
+    proceso_acumular_actividad_agentes = threading.Thread(target=exportar_tramos_faltantes,args=([['actividad_por_agente','actividad_por_agente_cola'],None,None,None,None]))
+    proceso_acumular_estados_agente = threading.Thread(target=exportar_tramos_faltantes,args=([['estados_por_agente'],None,None,None,None]))
+    proceso_acumular_listado_llamadas = threading.Thread(target=exportar_tramos_faltantes,args=([['listado_llamadas'],None,None,None,None]))
+    proceso_acumular_listado_acd = threading.Thread(target=exportar_tramos_faltantes,args=([['listado_acd'],None,None,None,None]))
     
     
-    lista_procesos = {proceso_acumular_colas,
+    lista_procesos = {
+                      proceso_acumular_colas,
+                      proceso_acumular_tramos,
+                      proceso_acumular_colas_tramos,
                       proceso_acumular_colas_individual,
                       proceso_acumular_agentes,
                       proceso_acumular_actividad_agentes,
@@ -1958,6 +1961,5 @@ def lanzar_varios_robot_informes_masvoz():
         proceso.join()
     
 if __name__ == "__main__":
-
     iniciarRobot()
 
