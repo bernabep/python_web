@@ -25,28 +25,7 @@ logger.addHandler(stream_handler)
 #!ASIGNO VARIABLES GLOBALES
 lista_minutos=[15,45]
 lista_colas = [
-'VY SY Italiano',
-'VY SY Frances',
-'VY SY Ingles',
-'VY SY Catalan',
-'VY SY Espa��ol',
-'VY S7 Visa It K',
-'VY S7 Visa Fr K',
-'VY S7 Visa Ca K',
-'VY S7 Visa En K',
-'VY S7 Visa Es K',
-'VY S6 PAE It K',
-'VY S6 PAE Fr K',
-'VY S6 PAE Ca K',
-'VY S6 PAE En K',
-'VY S6 PAE Es K',
-'VY S5 Reembolso It K',
-'VY S5 Reembolso Fr K',
-'VY S5 Reembolso En NDL K',
-'VY S5 Reembolso En K',
-'VY S5 Reembolso Es K',
-'VY S4 Lost & Found En K',
-'VY S4 Lost & Found Es K',
+'VY Campa��a Emision K ',
 'VY S0 Disruptions Ca K',
 'VY S0 Disruptions En K',
 'VY S0 Disruptions Es K',
@@ -74,18 +53,39 @@ lista_colas = [
 'VY S3 Ventas Es K',
 'VY S3 Ventas Fr K',
 'VY S3 Ventas It K',
-'VY S3 Club It K',
-'VY S3 Club Fr K',
-'VY S3 Club En K',
-'VY S3 Club Ca K',
-'VY S3 Club Es K',
-'VY S3 Premium It K',
-'VY S3 Premium Fr K',
-'S3 Premium En K',
-'VY S3 Premium Ca K',
-'VY S3 Premium Es K',
-'VY Campa��a Emision K ',
-'VY S5 Reembolso Ca K'
+'VY S4 Lost & Found En K',
+'VY S4 Lost & Found Es K',
+'VY S5 Reembolso Ca K',
+'VY S5 Reembolso En K',
+'VY S5 Reembolso En NDL K',
+'VY S5 Reembolso Es K',
+'VY S5 Reembolso Fr K',
+'VY S5 Reembolso It K',
+'VY S6 PAE Ca K',
+'VY S6 PAE En K',
+'VY S6 PAE Es K',
+'VY S6 PAE Fr K',
+'VY S6 PAE It K',
+'VY S7 Visa Ca K',
+'VY S7 Visa En K',
+'VY S7 Visa Es K',
+'VY S7 Visa Fr K',
+'VY S7 Visa It K',
+'VY SY Catalan',
+'VY SY Espa��ol',
+'VY SY Frances',
+'VY SY Ingles',
+'VY SY Italiano'
+# 'S3 Premium En K', #no existen
+# 'VY S3 Premium It K', #no existen
+# 'VY S3 Club Ca K', #no existen
+# 'VY S3 Club En K', #no existen
+# 'VY S3 Club Es K', #no existen
+# 'VY S3 Club Fr K', #no existen
+# 'VY S3 Club It K', #no existen
+# 'VY S3 Premium Ca K', #no existen
+# 'VY S3 Premium Es K', #no existen
+# 'VY S3 Premium Fr K', #no existen
 ]
 lista_informes_a_sacar=['colas_individual_tramos']
 lista_informes_a_sacar=['colas','tramos','colas_tramos','actividad_por_agente','actividad_por_agente_cola','estados_por_agente','agentes','listado_llamadas','listado_acd','skills_agentes']
@@ -167,8 +167,19 @@ def lanzar_playwright():
     # except Exception as e:
     #     print(e)
 
-def mensaje(mensaje:str):
-    print(f"\n\n{'#'*(len(mensaje)+8)}\n### {mensaje} ###\n{'#'*(len(mensaje)+8)}\n")
+def mostrar_mensaje(mensajes):
+    # print(f"\n\n{'#'*(len(mensaje)+8)}\n### {mensaje} ###\n{'#'*(len(mensaje)+8)}\n")
+    if len(mensajes)>0:
+        largo = 0
+        for linea in mensajes:
+            if len(linea)> largo:largo = len(linea)
+        largo
+        
+        print(f"\n\n{'#'*(largo+8)}")
+        print(f"{'#'*(largo+8)}")
+        for linea in mensajes:
+            print(f"### {linea}{' '*(largo-len(linea))} ###")
+        print(f"{'#'*(largo+8)}\n")
     
 def abrir_navegador(oculto=False,mi_playwright=None):   
     if mi_playwright == None:
@@ -252,6 +263,7 @@ def obtener_web_masvoz(seccion='ESTADÍSTICAS',maximizado=False,navegador=None,p
   
        
 def descargar_colas_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=datetime.today().date()):
+    mensaje = None
     finalizado_ok = False
    
    
@@ -293,11 +305,12 @@ def descargar_colas_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=datetime.
     nombre_archivo = os.path.join(ruta_destino,'Informe_colas.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    print(f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} ")
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
 
-    return finalizado_ok
+    return finalizado_ok,mensaje
 
 def descargar_tramos_masmoz(frame,pagina,fecha_inicio=datetime.today().date()):
+    mensaje = None
     finalizado_ok = False
    
    
@@ -336,11 +349,12 @@ def descargar_tramos_masmoz(frame,pagina,fecha_inicio=datetime.today().date()):
     nombre_archivo = os.path.join(ruta_destino,'Informe_tramos.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    print(f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} ")
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
 
-    return finalizado_ok
+    return finalizado_ok,mensaje
 
 def descargar_colas_tramos_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=datetime.today().date()):
+    mensaje = None
     finalizado_ok = False    
    
     fecha_inicio_filtro = fecha_inicio
@@ -383,11 +397,13 @@ def descargar_colas_tramos_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=da
     nombre_archivo = os.path.join(ruta_destino,'Informe_colas_tramos.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    print(f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} ")
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
 
-    return finalizado_ok
+    return finalizado_ok,mensaje
 
 def descargar_colas_individual_tramos_masvoz(frame,pagina,fecha_inicio=datetime.today().date(),cola='Todas las Colas'):
+    mensaje = None
+    mensaje = f"Control {fecha_inicio} {cola} "
     finalizado_ok = False    
    
     fecha_inicio_filtro = fecha_inicio
@@ -440,11 +456,12 @@ def descargar_colas_individual_tramos_masvoz(frame,pagina,fecha_inicio=datetime.
     nombre_archivo = os.path.join(ruta_destino,'Informe_colas_individual_tramos.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    print(f"Se ha exportado la cola {cola} {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} ")
+    mensaje += f"Se ha exportado la cola {cola} {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
 
-    return finalizado_ok
+    return finalizado_ok,mensaje
 
 def descargar_actividad_por_agente(frame,pagina,fecha_inicio=datetime.today().date()):
+    mensaje = None
     finalizado_ok = False
       
     fecha_inicio_filtro = fecha_inicio
@@ -484,11 +501,12 @@ def descargar_actividad_por_agente(frame,pagina,fecha_inicio=datetime.today().da
     nombre_archivo = os.path.join(ruta_destino,'Informe_actividad_por_agente.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    print(f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} ")
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
 
-    return finalizado_ok
+    return finalizado_ok,mensaje
 
 def descargar_actividad_por_agente_cola (frame,pagina,fecha_inicio=datetime.today().date()):
+    mensaje = None
     finalizado_ok = False
       
     fecha_inicio_filtro = fecha_inicio
@@ -528,12 +546,13 @@ def descargar_actividad_por_agente_cola (frame,pagina,fecha_inicio=datetime.toda
     nombre_archivo = os.path.join(ruta_destino,'Informe_actividad_por_agente_cola.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    print(f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} ")
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
 
-    return finalizado_ok
+    return finalizado_ok,mensaje
 
 def descargar_estados_por_agente(frame,pagina,fecha_inicio=datetime.today().date()):
     #Solo deja descargar una vez, para saltar esta limitación hay que volver abrir el navegador    
+    mensaje = None
     finalizado_ok = False
       
     fecha_inicio_filtro = fecha_inicio
@@ -572,11 +591,12 @@ def descargar_estados_por_agente(frame,pagina,fecha_inicio=datetime.today().date
     nombre_archivo = os.path.join(ruta_destino,'Informe_estados_por_agente.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    print(f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} ")
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
 
-    return finalizado_ok
+    return finalizado_ok,mensaje
 
 def descargar_agentes(frame,pagina,fecha_inicio=datetime.today().date()):
+    mensaje = None
     finalizado_ok = False   
    
     fecha_inicio_filtro = fecha_inicio
@@ -616,11 +636,12 @@ def descargar_agentes(frame,pagina,fecha_inicio=datetime.today().date()):
     nombre_archivo = os.path.join(ruta_destino,'Informe_agentes.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    print(f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} ")
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
 
-    return finalizado_ok
+    return finalizado_ok,mensaje
  
 def descargar_listado_llamadas(frame,pagina,fecha_inicio=datetime.today().date()):
+    mensaje = None
     finalizado_ok = False
 
     fecha_inicio_filtro = fecha_inicio
@@ -686,12 +707,13 @@ def descargar_listado_llamadas(frame,pagina,fecha_inicio=datetime.today().date()
     nombre_archivo = os.path.join(ruta_destino,'Informe_listado_llamadas.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    print(f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} ")
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
 
-    return finalizado_ok
+    return finalizado_ok,mensaje
         
 
 def descargar_listado_acd(frame,pagina,fecha_inicio=datetime.today().date()):
+    mensaje = None
     finalizado_ok = False
     
     fecha_inicio_filtro = fecha_inicio
@@ -742,9 +764,9 @@ def descargar_listado_acd(frame,pagina,fecha_inicio=datetime.today().date()):
     nombre_archivo = os.path.join(ruta_destino,'Informe_listado_acd.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    print(f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} ")
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
 
-    return finalizado_ok
+    return finalizado_ok,mensaje
 
 
 def descargar_skills_agentes(frame,pagina):
@@ -759,9 +781,9 @@ def descargar_skills_agentes(frame,pagina):
     nombre_archivo = os.path.join(ruta_destino,'Informe_listado_acd.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    print(f"Se ha exportado {nombre_archivo}")
+    mensaje = f"Se ha exportado {nombre_archivo}"
 
-    return finalizado_ok
+    return finalizado_ok,mensaje
 
 def copiar_archivo(nombre_archivo,nombre_archivo_final:str,ruta_destino:str,intentos=0):
     while (intentos<10):
@@ -831,6 +853,7 @@ def obtener_largo_archivo(archivo_origen,separacion=';',intentos=0):
         break
    
 def insertar_columna_csv(archivo_origen,nombre_columna,dato,separacion=';',separacion_destino=';',intentos=0):
+    mensaje = None
     while (intentos<10):
         try:
         # Leer el archivo CSV en un DataFrame
@@ -848,11 +871,12 @@ def insertar_columna_csv(archivo_origen,nombre_columna,dato,separacion=';',separ
             insertar_columna_csv(archivo_origen=archivo_origen,nombre_columna=nombre_columna,separacion=separacion,separacion_destino=separacion_destino,intentos=intentos)
        
         else:
-            print(f'Al archivo {os.path.basename(archivo_origen)} se le añadió la columna {nombre_columna} con el dato: {dato}')
-            return True
+            mensaje = f'Al archivo {os.path.basename(archivo_origen)} se le añadió la columna {nombre_columna} con el dato: {dato}'
+            return mensaje
         break
 
 def acumular_datos(archivo_nuevo,archivo_acumulado,separador=";",intentos=0,formato_fecha='%Y-%m-%d'):
+    mensaje = None
     while (intentos<10):
         try:
             df_nuevo = pd.read_csv(archivo_nuevo, index_col=0, sep=separador,parse_dates=["Fecha"],date_format=formato_fecha)
@@ -871,10 +895,12 @@ def acumular_datos(archivo_nuevo,archivo_acumulado,separador=";",intentos=0,form
             sleep(segundos_de_espera)
             acumular_datos(archivo_nuevo=archivo_nuevo,archivo_acumulado=archivo_acumulado,separador=separador,intentos=intentos,formato_fecha=formato_fecha)
         else:
-            print(f'Los datos del archivo {os.path.basename(archivo_nuevo)} se han acumulado en el archivo {os.path.basename(archivo_acumulado)}')
+            mensaje = f'Los datos del archivo {os.path.basename(archivo_nuevo)} se han acumulado en el archivo {os.path.basename(archivo_acumulado)}'
+            return mensaje
         break
 
 def eliminar_duplicados(archivo,columnas_unicas:list,separador=';',intentos=0):
+    mensaje = None
     while (intentos<10):
         try:
             df = pd.read_csv(archivo,sep=separador)
@@ -890,15 +916,14 @@ def eliminar_duplicados(archivo,columnas_unicas:list,separador=';',intentos=0):
             intentos +=1
             print(f"Error al procesar el archivo: {e}")
             sleep(3)
-            eliminar_duplicados(archivo=archivo,columnas_unicas=columnas_unicas,separador=separador,intentos=intentos)
-       
+            eliminar_duplicados(archivo=archivo,columnas_unicas=columnas_unicas,separador=separador,intentos=intentos)       
         else:
-
-            print(f'Se han eliminado los registros duplicados al archivo {os.path.basename(archivo)} agrupado por:  {columnas_unicas}')
-            return True
+            mensaje = f'Se han eliminado los registros duplicados al archivo {os.path.basename(archivo)} agrupado por:  {columnas_unicas}'
+            return mensaje
         break
 
 def eliminar_registros_por_num_dias_atras(archivo,num_dias_atras:int,desde_la_fecha:datetime,separador=';',intentos=0):
+    mensaje = None
     while (intentos<10):
         try:
             df = pd.read_csv(archivo,sep=separador)
@@ -923,8 +948,8 @@ def eliminar_registros_por_num_dias_atras(archivo,num_dias_atras:int,desde_la_fe
        
         else:
 
-            print(f'Se han eliminado {cantidadRegistrosABorrar} registros, los que tenían fecha inferior a {fecha_limite} que corresponden a los {num_dias_atras} dias antes de la fecha {desde_la_fecha}')
-            return True
+            mensaje = f'Se han eliminado {cantidadRegistrosABorrar} registros, los que tenían fecha inferior a {fecha_limite} que corresponden a los {num_dias_atras} dias antes de la fecha {desde_la_fecha}'
+            return mensaje
         break
  
 def convertir_deltatime_a_time(tiempoEnSegundos:timedelta):
@@ -1030,7 +1055,7 @@ def obtener_tramos_faltantes_bd(tabla,fecha_inicio,fecha_fin,columna_fecha,colum
     return lista_fechas_tramos_faltantes
 
 def obtener_tramos_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_fin,columna_fecha,columna_tiempo,separador=';',ultimo_tramo_del_dia=False,minutosPorTramo=30,formato_fecha='%Y-%m-%d'):
-   
+    mensaje = ""
     lista_fechas_tramos_requeridas=[]
     lista_fechas_tramos_acumuladas=[]
     lista_fechas_tramos_faltantes=[]
@@ -1097,15 +1122,15 @@ def obtener_tramos_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_fin,colum
             lista_fechas_tramos_faltantes.append(fecha)
 
     if (len(lista_fechas_tramos_faltantes)>0):
-        print(f'En el archivo {archivo} faltan las siguientes fechas:')
+        mensaje += f'En el archivo {archivo} faltan las siguientes fechas:'
         for fecha in reversed(lista_fechas_tramos_faltantes):
-            print(f'{fecha}')
+            mensaje +=f'\n{fecha}'
     else:
-        print(f'En el archivo {archivo} no faltan fechas ni tramos entre {fecha_inicio} and {fecha_fin}')
-    return lista_fechas_tramos_faltantes
+        mensaje += f'\nEn el archivo {archivo} no faltan fechas ni tramos entre {fecha_inicio} and {fecha_fin}'
+    return lista_fechas_tramos_faltantes,mensaje
            
 def obtener_tramos_con_cola_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_fin,columna_fecha,separador=';',formato_fecha='%Y-%m-%d'):
-   
+    mensaje = None   
     lista_fechas_tramos_requeridas=[]
     lista_fechas_tramos_acumuladas=[]
     lista_fechas_tramos_faltantes=[]
@@ -1171,253 +1196,265 @@ def obtener_tramos_con_cola_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_
         # print(f'En el archivo {archivo} faltan las siguientes fechas:')
         # for fecha in reversed(lista_fechas_tramos_faltantes):
         #     print(f'{fecha[0].strftime(format='%d-%m-%Y')} cola {fecha[1]} ')
-        print(f"En el archivo {archivo} faltan {len(lista_fechas_tramos_faltantes)} exportados")
+        mensaje = f"En el archivo {archivo} faltan {len(lista_fechas_tramos_faltantes)} exportados"
 
     else:
-        print(f'En el archivo {archivo} no faltan fechas ni tramos entre {fecha_inicio} and {fecha_fin}')
+        mensaje = f'En el archivo {archivo} no faltan fechas ni tramos entre {fecha_inicio} and {fecha_fin}'
     
-    return lista_fechas_tramos_faltantes
+    return lista_fechas_tramos_faltantes,mensaje
            
 
-def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=None,pagina=None,frame=None,mi_playwright=None):
+def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=None,pagina=None,frame=None,mi_playwright=None,mensajes=None):
+    if mensajes == None:
+        mensajes = []
     tipoInforme = 'colas'
     if(tipoInforme in lista_informes):
-        print('Buscando tramos que faltan en el acumulado colas')
+        mensajes.append('Buscando tramos que faltan en el acumulado colas')
         lista_fechas_tramos_faltantes= []
         archivo = os.path.join(ruta_destino,'Informe_colas_acumulado.csv')
         fecha_fin = datetime.now()-timedelta(minutes=30)
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_colas)
-        lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        lista_fechas_tramos_faltantes,mensaje = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        mensajes.append(mensaje)
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
-                print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
+                mensajes.append("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
                 return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
+                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)        
-            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
+            return mensajes #con este hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
     
 
     tipoInforme = 'tramos'
     if(tipoInforme in lista_informes):   
-        print('Buscando tramos que faltan en el acumulado tramos')
+        mensajes.append('Buscando tramos que faltan en el acumulado tramos')
         lista_fechas_tramos_faltantes= []
         archivo = os.path.join(ruta_destino,'Informe_tramos_acumulado.csv')
         fecha_fin = datetime.now()-timedelta(minutes=30)
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_tramos)
         
-        lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        lista_fechas_tramos_faltantes,mensaje = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        mensajes.append(mensaje)
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
-                print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
+                mensajes.append("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
                 return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['tramos'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
+                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['tramos'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
             else:
                 fecha_inicio += timedelta(minutes=30)        
-            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
+            return mensajes #con este hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
     
     
     tipoInforme = 'colas_tramos'
     if(tipoInforme in lista_informes):   
-        print('Buscando tramos que faltan en el acumulado colas_tramos')
+        mensajes.append('Buscando tramos que faltan en el acumulado colas_tramos')
         lista_fechas_tramos_faltantes= []    
         archivo = os.path.join(ruta_destino,'Informe_colas_tramos_acumulado.csv')
         fecha_fin = datetime.now()-timedelta(minutes=30)
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_colas_tramos)
-        lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo',ultimo_tramo_del_dia=False)
+        lista_fechas_tramos_faltantes,mensaje = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo',ultimo_tramo_del_dia=False)
+        mensajes.append(mensaje)
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
-                print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
+                mensajes.append("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
                 return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas_tramos'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
+                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas_tramos'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
+            return mensajes #con este hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
     
     
     tipoInforme = 'actividad_por_agente'
     if(tipoInforme in lista_informes):   
-        print('Buscando tramos que faltan en el acumulado actividad_por_agente')
+        mensajes.append('Buscando tramos que faltan en el acumulado actividad_por_agente')
         lista_fechas_tramos_faltantes= []    
         archivo = os.path.join(ruta_destino,'Informe_actividad_por_agente_acumulado.csv')
         fecha_fin = datetime.now()-timedelta(minutes=30)
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_actividad_por_agente)
-        lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        lista_fechas_tramos_faltantes,mensaje = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        mensajes.append(mensaje)
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
-                print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
+                mensajes.append("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
                 return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha,lista_informes=['actividad_por_agente'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
+                    robot_informes_masvoz(fecha,lista_informes=['actividad_por_agente'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
+            return mensajes #con este hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
     
     
     tipoInforme = 'actividad_por_agente_cola'
     if(tipoInforme in lista_informes):   
-        print('Buscando tramos que faltan en el acumulado actividad_por_agente_cola')
+        mensajes.append('Buscando tramos que faltan en el acumulado actividad_por_agente_cola')
         lista_fechas_tramos_faltantes= []    
         archivo = os.path.join(ruta_destino,'Informe_actividad_por_agente_cola_acumulado.csv')
         fecha_fin = datetime.now()-timedelta(minutes=30)
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_actividad_por_agente_cola)
-        lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        lista_fechas_tramos_faltantes,mensaje = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        mensajes.append(mensaje)
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
-                print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
+                mensajes.append("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
                 return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha,lista_informes=['actividad_por_agente_cola'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
+                    robot_informes_masvoz(fecha,lista_informes=['actividad_por_agente_cola'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
+            return mensajes #con este hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
         
     
     tipoInforme = 'estados_por_agente'
     if(tipoInforme in lista_informes):   
-        print('Buscando tramos que faltan en el acumulado estados_por_agente')
+        mensajes.append('Buscando tramos que faltan en el acumulado estados_por_agente')
         lista_fechas_tramos_faltantes= []    
         archivo = os.path.join(ruta_destino,'Informe_estados_por_agente_acumulado.csv')
         fecha_fin = datetime.now()-timedelta(minutes=30)
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_estados_por_agente)
-        lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        lista_fechas_tramos_faltantes,mensaje = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        mensajes.append(mensaje)
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
-                print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
+                mensajes.append("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
                 return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha,lista_informes=['estados_por_agente'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
+                    robot_informes_masvoz(fecha,lista_informes=['estados_por_agente'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
+            return mensajes #con este hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
     
     
     tipoInforme = 'agentes'
     if(tipoInforme in lista_informes):   
-        print('Buscando tramos que faltan en el acumulado agente')
+        mensajes.append('Buscando tramos que faltan en el acumulado agente')
         lista_fechas_tramos_faltantes= []    
         archivo = os.path.join(ruta_destino,'Informe_agentes_acumulado.csv')
         fecha_fin = datetime.now()-timedelta(minutes=30)
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_agentes)
-        lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        lista_fechas_tramos_faltantes,mensaje = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        mensajes.append(mensaje)
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
-                print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
+                mensajes.append("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
                 return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha,lista_informes=['agentes'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
+                    robot_informes_masvoz(fecha,lista_informes=['agentes'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
+            return mensajes #con este hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
     
     
     tipoInforme = 'listado_llamadas'
     if(tipoInforme in lista_informes):   
-        print('Buscando tramos que faltan en el listado_llamadas')
+        mensajes.append('Buscando tramos que faltan en el listado_llamadas')
         lista_fechas_tramos_faltantes= []    
         archivo = os.path.join(ruta_destino,'Informe_listado_llamadas_acumulado.csv')
         fecha_fin = datetime.now()-timedelta(minutes=30)
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_listado_llamadas)
-        lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        lista_fechas_tramos_faltantes,mensaje = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        mensajes.append(mensaje)
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
-                print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
+                mensajes.append("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
                 return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha,lista_informes=['listado_llamadas'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
+                    robot_informes_masvoz(fecha,lista_informes=['listado_llamadas'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
+            return mensajes #con este hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
     
     
     tipoInforme = 'listado_acd'
     if(tipoInforme in lista_informes):   
-        print('Buscando tramos que faltan en el listado_acd')
+        mensajes.append('Buscando tramos que faltan en el listado_acd')
         lista_fechas_tramos_faltantes= []    
         archivo = os.path.join(ruta_destino,'Informe_listado_acd_acumulado.csv')
         fecha_fin = datetime.now()-timedelta(minutes=30)
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_listado_acd)
-        lista_fechas_tramos_faltantes = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        lista_fechas_tramos_faltantes,mensaje = obtener_tramos_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha',columna_tiempo='Tramo_actualizado',ultimo_tramo_del_dia=True)
+        mensajes.append(mensaje)
         for fecha in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
-                print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
+                mensajes.append("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
                 return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha,lista_informes=['listado_acd'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
+                    robot_informes_masvoz(fecha,lista_informes=['listado_acd'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
     
             else:
                 fecha_inicio += timedelta(minutes=30)
-            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
+            return mensajes #con este hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_actividad_por agente_faltantes
 
     tipoInforme = 'colas_individual_tramos'
     if(tipoInforme in lista_informes):   
-        print('Buscando tramos que faltan en el colas_individual_tramos')
+        mensajes.append('Buscando tramos que faltan en el colas_individual_tramos')
         lista_fechas_tramos_faltantes= []
         archivo = os.path.join(ruta_destino,'Informe_colas_individual_tramos_acumulado.csv')
         fecha_fin = datetime.now()-timedelta(minutes=30)
         fecha_inicio = fecha_fin - timedelta(days=num_dias_para_acumular_colas_individual_tramos)
         
-        lista_fechas_tramos_faltantes = obtener_tramos_con_cola_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha')
+        lista_fechas_tramos_faltantes,mensaje = obtener_tramos_con_cola_faltantes_csv_acumulados(archivo=archivo,fecha_inicio=fecha_inicio,fecha_fin=fecha_fin,columna_fecha='Fecha')
+        mensajes.append(mensaje)
         lista_fechas_tramos_faltantes.sort()
         for fecha,cola in reversed(lista_fechas_tramos_faltantes):
             if datetime.now().minute + 1 in lista_minutos:
-                print("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
+                mensajes.append("Se detiene la recuperacion de tramos faltantes porque empieza un nuevo tramo")
                 return True
             try:  
                 if(fecha.hour>=primer_tramo_del_dia):
-                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas_individual_tramos'],cola = cola,recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
+                    robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas_individual_tramos'],cola = cola,recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
                 logger.error("Errror:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
             else:
                 fecha_inicio += timedelta(minutes=30)        
-            return False #con este break hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
+            return mensajes #con este hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
     
         
 def ejecutar_en_minutos(funcion_a_lanzar,lista_minutos=[1,31]):
@@ -1519,11 +1556,13 @@ def prueba_crear_tabla_fija():
     resultado = lanzar_query(db,query)
     print (resultado)
 
-def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30),lista_informes=lista_informes_a_sacar, cola = None,recuperar_datos=False,navegador=None,pagina=None,frame=None,mi_playwright=None):
+def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30),lista_informes=lista_informes_a_sacar, cola = None,recuperar_datos=False,navegador=None,pagina=None,frame=None,mi_playwright=None,mensajes=None):
+    if mensajes == None:
+        mensajes = []
     
     #Si está fuera de horario, no exporta nada, primer_tramo_Del_dia está configurado en 9
     if(fecha_hora_inicio.hour<primer_tramo_del_dia):
-        print(f'El tramo {fecha_hora_inicio.time()} está fuera del horario del servicio, el primer tramo es el de las {primer_tramo_del_dia}')
+        mensajes.append(f'El tramo {fecha_hora_inicio.time()} está fuera del horario del servicio, el primer tramo es el de las {primer_tramo_del_dia}')
         return True
    
     #Se ajusta el tiempo para quedarse con la hora o la hora y media, según en que minute estemos
@@ -1544,7 +1583,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
        
     fecha_hora_inicio_tramo = datetime.combine(fechaDatos,hora_inicio)
     if(fecha_hora_inicio_tramo>(datetime.now()-timedelta(minutes=30))):
-        print(f'Se está solicitando actualizar con fecha {fecha_hora_inicio_tramo} y ese tramo aun no está cerrado ')
+        mensajes.append(f'Se está solicitando actualizar con fecha {fecha_hora_inicio_tramo} y ese tramo aun no está cerrado ')
         return True
         # raise ValueError("La Fecha no puede ser superior a ahora mismo")
  
@@ -1557,22 +1596,30 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
     archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
 
     if(tipoInforme in lista_informes):
-        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        mensajes.append(f"Empezando a sacar el informe_{tipoInforme}")
         mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
-        archivoDescargado = descargar_colas_masvoz(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        archivoDescargado,mensaje = descargar_colas_masvoz(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        mensajes.append(mensaje)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
-            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
-            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+            mensajes.append(mensaje)
+            mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            mensajes.append(mensaje)
             largo = 0
             largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
             if largo>3:
-                acumular_datos(archivo_nuevo=archivoDescargado,archivo_acumulado=archivo_acumulado)
-                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_colas,desde_la_fecha=fechaDatos)
+                mensaje = acumular_datos(archivo_nuevo=archivoDescargado,archivo_acumulado=archivo_acumulado)
+                mensajes.append(mensaje)
+                mensaje = eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                mensajes.append(mensaje)
+                mensaje = eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_colas,desde_la_fecha=fechaDatos)
+                mensajes.append(mensaje)
                 
         else:
-            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+            mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+        mostrar_mensaje(mensajes)
+        mensajes.clear()
         
         
 
@@ -1584,23 +1631,31 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
     archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
 
     if(tipoInforme in lista_informes):
-        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        mensajes.append(f"Empezando a sacar el informe_{tipoInforme}")
         mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
-        archivoDescargado = descargar_tramos_masmoz(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
+        archivoDescargado,mensaje = descargar_tramos_masmoz(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
+        mensajes.append(mensaje)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
             nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
-            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
-            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+            mensajes.append(mensaje)
+            mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            mensajes.append(mensaje)
             largo = 0
             largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
             if largo>3:
-                acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
-                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_tramos,desde_la_fecha=fechaDatos)
+                mensaje = acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
+                mensajes.append(mensaje)
+                mensaje = eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                mensajes.append(mensaje)
+                mensaje = eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_tramos,desde_la_fecha=fechaDatos)
+                mensajes.append(mensaje)
                 
         else:
-            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+            mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+        mostrar_mensaje(mensajes)
+        mensajes.clear()
 
 
     """
@@ -1611,23 +1666,31 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
     archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
 
     if(tipoInforme in lista_informes):
-        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        mensajes.append(f"Empezando a sacar el informe_{tipoInforme}")
         mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
-        archivoDescargado = descargar_colas_tramos_masvoz(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        archivoDescargado,mensaje = descargar_colas_tramos_masvoz(frame=frame,pagina=pagina,hora_inicio=hora_inicio,fecha_inicio=fechaDatos)
+        mensajes.append(mensaje)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
             nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
-            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
-            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo',dato=hora_inicio)
+            mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+            mensajes.append(mensaje)
+            mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo',dato=hora_inicio)
+            mensajes.append(mensaje)
             largo = 0
             largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
             if largo>3:
-                acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
-                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_colas_tramos,desde_la_fecha=fechaDatos)
+                mensaje = acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
+                mensajes.append(mensaje)
+                mensaje = eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                mensajes.append(mensaje)
+                mensaje = eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_colas_tramos,desde_la_fecha=fechaDatos)
+                mensajes.append(mensaje)
 
         else:
-            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+            mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+        mostrar_mensaje(mensajes)
+        mensajes.clear()
 
 
         """
@@ -1641,27 +1704,36 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
 
     if(tipoInforme in lista_informes):
         if fecha_hora_inicio.date() == datetime.now().date():
-            print("No se exportan datos de Hoy en colas_individual_tramos")
+            mensajes.append("No se exportan datos de Hoy en colas_individual_tramos")
         else:
-            print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+            mensajes.append(f"Empezando a sacar el informe_{tipoInforme}")
             mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
 
-            archivoDescargado = descargar_colas_individual_tramos_masvoz(frame=frame,pagina=pagina,fecha_inicio=fechaDatos,cola=cola)
+            archivoDescargado,mensaje = descargar_colas_individual_tramos_masvoz(frame=frame,pagina=pagina,fecha_inicio=fechaDatos,cola=cola)
+            mensajes.append(mensaje)
             if(archivoDescargado!=False):
                 hora_inicio = time.replace(hora_inicio,second=0)
                 nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Cola',dato=cola)
+                mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+                mensajes.append(mensaje)
+                mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+                mensajes.append(mensaje)
+                mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Cola',dato=cola)
+                mensajes.append(mensaje)
                 largo = 0
                 largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
                 if largo>3:
-                    acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
-                    eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                    eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_tramos,desde_la_fecha=fechaDatos)
+                    mensaje = acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
+                    mensajes.append(mensaje)
+                    mensaje = eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                    mensajes.append(mensaje)
+                    mensaje = eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_tramos,desde_la_fecha=fechaDatos)
+                    mensajes.append(mensaje)
                     
             else:
-                print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+                mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+        mostrar_mensaje(mensajes)
+        mensajes.clear()
 
 
             
@@ -1673,22 +1745,30 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
     archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
 
     if(tipoInforme in lista_informes):
-        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        mensajes.append(f"Empezando a sacar el informe_{tipoInforme}")
         mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
-        archivoDescargado = descargar_actividad_por_agente(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
+        archivoDescargado,mensaje = descargar_actividad_por_agente(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
+        mensajes.append(mensaje)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
-            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
-            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+            mensajes.append(mensaje)
+            mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            mensajes.append(mensaje)
             largo = 0
             largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
             if largo>1:
-                acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
-                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_actividad_por_agente,desde_la_fecha=fechaDatos)
+                mensaje = acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
+                mensajes.append(mensaje)
+                mensaje = eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                mensajes.append(mensaje)
+                mensaje = eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_actividad_por_agente,desde_la_fecha=fechaDatos)
+                mensajes.append(mensaje)
         
         else:
-            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+            mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+        mostrar_mensaje(mensajes)
+        mensajes.clear()
         
             
     """
@@ -1699,23 +1779,31 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
     archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
 
     if(tipoInforme in lista_informes):
-        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        mensajes.append(f"Empezando a sacar el informe_{tipoInforme}")
         mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
-        archivoDescargado = descargar_actividad_por_agente_cola(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
+        archivoDescargado,mensaje = descargar_actividad_por_agente_cola(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
+        mensajes.append(mensaje)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
             nombre_archivo_finalUnico = f"Informe_{tipoInforme}_{str(hora_inicio).replace(':','_')}.csv"
-            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
-            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+            mensajes.append(mensaje)
+            mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            mensajes.append(mensaje)
             largo = 0
             largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
             if largo>3:
-                acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
-                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_actividad_por_agente_cola,desde_la_fecha=fechaDatos)
+                mensaje = acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
+                mensajes.append(mensaje)
+                mensaje = eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                mensajes.append(mensaje)
+                mensaje = eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_actividad_por_agente_cola,desde_la_fecha=fechaDatos)
+                mensajes.append(mensaje)
                 
         else:
-            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+            mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+        mostrar_mensaje(mensajes)
+        mensajes.clear()
 
 
         
@@ -1727,25 +1815,32 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
     archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
 
     if(tipoInforme in lista_informes):
-        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        mensajes.append(f"Empezando a sacar el informe_{tipoInforme}")
         #este informe solo deja descargar una vez, luego hay que cerrar el navegador
         if pagina: pagina.close()
         pagina = None        
         # navegador = None
         mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
-        archivoDescargado = descargar_estados_por_agente(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
+        archivoDescargado,mensaje = descargar_estados_por_agente(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
+        mensajes.append(mensaje)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
-            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            mensajes.append(mensaje)
             largo = 0
             largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
             if largo>3:
-                acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado,formato_fecha='%d-%m-%Y')
-                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_estados_por_agente,desde_la_fecha=fechaDatos)
+                mensaje = acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado,formato_fecha='%d-%m-%Y')
+                mensajes.append(mensaje)
+                mensaje = eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                mensajes.append(mensaje)
+                mensaje = eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_estados_por_agente,desde_la_fecha=fechaDatos)
+                mensajes.append(mensaje)
                 
         else:
-            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+            mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+        mostrar_mensaje(mensajes)
+        mensajes.clear()
 
 
    
@@ -1759,26 +1854,34 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
     archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
 
     if(tipoInforme in lista_informes):
-        print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+        mensajes.append(f"Empezando a sacar el informe_{tipoInforme}")
         #este informe solo deja descargar una vez, luego hay que cerrar el navegador
         if pagina: pagina.close()
         pagina = None        
         # navegador = None
         mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina)
-        archivoDescargado = descargar_agentes(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
+        archivoDescargado,mensaje = descargar_agentes(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
+        mensajes.append(mensaje)
         if(archivoDescargado!=False):
             hora_inicio = time.replace(hora_inicio,second=0)
-            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
-            insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos)
+            mensajes.append(mensaje)
+            mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+            mensajes.append(mensaje)
             largo = 0
             largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
             if largo>3:
-                acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
-                eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_agentes,desde_la_fecha=fechaDatos)
+                mensaje = acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
+                mensajes.append(mensaje)
+                mensaje = eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                mensajes.append(mensaje)
+                mensaje = eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_agentes,desde_la_fecha=fechaDatos)
+                mensajes.append(mensaje)
                 
         else:
-            print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+            mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+        mostrar_mensaje(mensajes)
+        mensajes.clear()
 
 
 
@@ -1789,70 +1892,79 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
     tipoInforme = 'listado_llamadas'
     columnas_unicas = ['ID Llamada','Servicio','Cuenta','Fecha']
     archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')      
-       
-    if any(item in lista_informes for item in ['listado_llamadas']):
-        if tipoInforme in lista_informes:
-            if(fechaDatos==datetime.today().date()) and datetime.now().hour <= 8:
-                print(f"Para {tipoInforme} aun no hay datos el {fechaDatos.strftime('%d-%m-%Y')}")
-            else:
-                #este informe solo deja descargar una vez, luego hay que cerrar el navegador
-                if pagina: pagina.close()
-                pagina = None        
-                # navegador = None
-                mi_playwright,navegador,pagina,frame = obtener_web_masvoz(seccion='DETALLES',navegador=navegador,pagina=pagina)
-                print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-                archivoDescargado = descargar_listado_llamadas(frame,pagina,fecha_inicio=fechaDatos)
-                if(archivoDescargado!=False and archivoDescargado != '0_Llamadas'):
-                    hora_inicio = time.replace(hora_inicio,second=0)
-                    insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
-                    largo = 0
-                    largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
-                    if largo>3:
-                        acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado,formato_fecha='%d-%m-%Y')
-                        eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                        eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_agentes,desde_la_fecha=fechaDatos)
-                        
-                elif archivoDescargado == '0_Llamadas':
-                    print(f'No hay llamadas para {fecha_hora_inicio} de informe {tipoInforme}')
-                else:
-                    print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
 
-
-   
-    if any(item in lista_informes for item in ['listado_acd']):
-        
-
-        """
-        IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
-        """
-        tipoInforme = 'listado_acd'
-        columnas_unicas = ['ID Llamada','Servicio','Fecha']
-        archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
-   
-        if tipoInforme in lista_informes:
-            if(fechaDatos==datetime.today().date()) and datetime.now().hour <= 8:
-                print(f"Para {tipoInforme} aun no hay datos el {fechaDatos.strftime('%d-%m-%Y')}")
-            else:
-                #este informe solo deja descargar una vez, luego hay que cerrar el navegador
-                if pagina: pagina.close()
-                pagina = None        
-                # navegador = None
-                mi_playwright,navegador,pagina,frame = obtener_web_masvoz(seccion='DETALLES',navegador=navegador,pagina=pagina)
-                print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
-                archivoDescargado = descargar_listado_acd(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
-                if(archivoDescargado!=False):
-                    hora_inicio = time.replace(hora_inicio,second=0)
-                    insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
-                    largo = 0
-                    largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
-                    if largo>3:
-                        acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado,formato_fecha='%d-%m-%Y')
-                        eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                        eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_agentes,desde_la_fecha=fechaDatos)
-                        
-                else:
-                    print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+    if tipoInforme in lista_informes:
+        if(fechaDatos==datetime.today().date()) and datetime.now().hour <= 8:
+            mensajes.append(f"Para {tipoInforme} aun no hay datos el {fechaDatos.strftime('%d-%m-%Y')}")
+        else:
+            #este informe solo deja descargar una vez, luego hay que cerrar el navegador
+            if pagina: pagina.close()
+            pagina = None        
+            # navegador = None
+            mi_playwright,navegador,pagina,frame = obtener_web_masvoz(seccion='DETALLES',navegador=navegador,pagina=pagina)
+            mensajes.append(f"Empezando a sacar el informe_{tipoInforme}")
+            archivoDescargado,mensaje = descargar_listado_llamadas(frame,pagina,fecha_inicio=fechaDatos)
+            mensajes.append(mensaje)
+            if(archivoDescargado!=False and archivoDescargado != '0_Llamadas'):
+                hora_inicio = time.replace(hora_inicio,second=0)
+                mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+                mensajes.append(mensaje)
+                largo = 0
+                largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
+                if largo>3:
+                    mensaje = acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado,formato_fecha='%d-%m-%Y')
+                    mensajes.append(mensaje)
+                    mensaje = eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                    mensajes.append(mensaje)
+                    mensaje = eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_agentes,desde_la_fecha=fechaDatos)
+                    mensajes.append(mensaje)
                     
+            elif archivoDescargado == '0_Llamadas':
+                mensajes.append(f'No hay llamadas para {fecha_hora_inicio} de informe {tipoInforme}')
+            else:
+                mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+        mostrar_mensaje(mensajes)
+        mensajes.clear()
+
+
+
+    """
+    IMPORTANTE CONFIGURAR EL tipoInforme,columnas_unicas,archivo_acumulado
+    """
+    tipoInforme = 'listado_acd'
+    columnas_unicas = ['ID Llamada','Servicio','Fecha']
+    archivo_acumulado = os.path.join(ruta_destino,f'Informe_{tipoInforme}_acumulado.csv')
+
+    if tipoInforme in lista_informes:
+        if(fechaDatos==datetime.today().date()) and datetime.now().hour <= 8:
+            mensajes.append(f"Para {tipoInforme} aun no hay datos el {fechaDatos.strftime('%d-%m-%Y')}")
+        else:
+            #este informe solo deja descargar una vez, luego hay que cerrar el navegador
+            if pagina: pagina.close()
+            pagina = None        
+            # navegador = None
+            mi_playwright,navegador,pagina,frame = obtener_web_masvoz(seccion='DETALLES',navegador=navegador,pagina=pagina)
+            mensajes.append(f"Empezando a sacar el informe_{tipoInforme}")
+            archivoDescargado,mensaje = descargar_listado_acd(frame=frame,pagina=pagina,fecha_inicio=fechaDatos)
+            mensajes.append(mensaje)
+            if(archivoDescargado!=False):
+                hora_inicio = time.replace(hora_inicio,second=0)
+                mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Tramo_actualizado',dato=hora_inicio)
+                mensajes.append(mensaje)
+                largo = 0
+                largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
+                if largo>3:
+                    mensaje = acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado,formato_fecha='%d-%m-%Y')
+                    mensajes.append(mensaje)
+                    mensaje = eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
+                    mensajes.append(mensaje)
+                    mensaje = eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_agentes,desde_la_fecha=fechaDatos)
+                    mensajes.append(mensaje)
+                    
+            else:
+                mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+        mostrar_mensaje(mensajes)
+        mensajes.clear()
 
 
     """
@@ -1861,35 +1973,46 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
 
     existe_archivo = os.path.exists(os.path.join(ruta_destino,'informe_skills_agentes.csv'))
     fecha_hora_primer_tramo = datetime.combine(datetime.today(), time(primer_tramo_del_dia, 0, 0)) 
-    if any(item in lista_informes for item in ['skills_agentes']) and (fecha_hora_primer_tramo == fecha_hora_inicio_tramo or not existe_archivo) :
+    if (fecha_hora_primer_tramo == fecha_hora_inicio_tramo or not existe_archivo) :
         
         tipoInforme = 'skills_agentes'
    
         if(tipoInforme in lista_informes):
-            print(f"\n\n{'#'*(len(tipoInforme)+37)}\n### Empezando a sacar el informe_{tipoInforme} ###\n{'#'*(len(tipoInforme)+37)}\n")
+            mensajes.append(f"Empezando a sacar el informe_{tipoInforme}")
             mi_playwright,navegador,pagina,frame = obtener_web_masvoz('SKILLS')
-            archivoDescargado = descargar_skills_agentes(frame=frame,pagina=pagina)
+            archivoDescargado,mensaje = descargar_skills_agentes(frame=frame,pagina=pagina)
+            mensajes.append(mensaje)
             if(archivoDescargado):
                 hora_inicio = time.replace(hora_inicio,second=0)
-                insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos,separacion=',')
+                mensaje = insertar_columna_csv(archivo_origen=archivoDescargado,nombre_columna='Fecha',dato=fechaDatos,separacion=',')
+                mensajes.append(mensaje)
                 largo = 0
                 largo = obtener_largo_archivo(archivo_origen=archivoDescargado)
             else:
-                print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+                mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
+            mostrar_mensaje(mensajes)
+            mensajes.clear()
 
-    pagina.close()
-    pagina = None
-    frame = None
 
     if recuperar_datos:
         """
         IMPORTANTE Esto busca y exporta los tramos que faltan en los acumulados
         """  
         try:
-            exportar_tramos_faltantes(lista_informes=lista_informes,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
+            exportar_tramos_faltantes(lista_informes=lista_informes,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
+            
         except:
-            exportar_tramos_faltantes(lista_informes=lista_informes,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright)
+            exportar_tramos_faltantes(lista_informes=lista_informes,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
+        mostrar_mensaje(mensajes)
+        mensajes.clear()
+    
+    
+    mostrar_mensaje(mensajes)
+    mensajes.clear()
 
+    pagina.close()
+    pagina = None
+    frame = None
 
 def iniciarRobot():
     try:    
@@ -1906,13 +2029,13 @@ def iniciarRobot():
 
 def lanzar_varios_robot_informes_masvoz():
     
-    proceso_colas = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['colas','tramos','colas_tramos'],None,None,None,None,None))
-    proceso_agentes = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['agentes'],None,None,None,None,None))
-    proceso_actividad_agentes = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['actividad_por_agente','actividad_por_agente_cola'],None,None,None,None,None))
-    proceso_estados_agente = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['estados_por_agente'],None,None,None,None,None))
-    proceso_listado_llamadas = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['listado_llamadas'],None,None,None,None,None))
-    proceso_listado_acd = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['listado_acd'],None,None,None,None,None))
-    proceso_skills_agentes = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['skills_agentes'],None,None,None,None,None))
+    proceso_colas = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['colas','tramos','colas_tramos'],None,None,None,None,None,None))
+    proceso_agentes = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['agentes'],None,None,None,None,None,None))
+    proceso_actividad_agentes = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['actividad_por_agente','actividad_por_agente_cola'],None,None,None,None,None,None))
+    proceso_estados_agente = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['estados_por_agente'],None,None,None,None,None,None))
+    proceso_listado_llamadas = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['listado_llamadas'],None,None,None,None,None,None))
+    proceso_listado_acd = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['listado_acd'],None,None,None,None,None,None))
+    proceso_skills_agentes = threading.Thread(target=robot_informes_masvoz,args=(datetime.now()-timedelta(minutes=30),['skills_agentes'],None,None,None,None,None,None))
     
     lista_procesos = {
                         proceso_colas,
@@ -1931,15 +2054,15 @@ def lanzar_varios_robot_informes_masvoz():
     for proceso in lista_procesos:
         proceso.join()
         
-    proceso_acumular_colas = threading.Thread(target=exportar_tramos_faltantes,args=([['colas'],None,None,None,None]))
-    proceso_acumular_tramos = threading.Thread(target=exportar_tramos_faltantes,args=([['tramos'],None,None,None,None]))
-    proceso_acumular_colas_tramos = threading.Thread(target=exportar_tramos_faltantes,args=([['colas_tramos'],None,None,None,None]))
-    proceso_acumular_colas_individual = threading.Thread(target=exportar_tramos_faltantes,args=([['colas_individual_tramos'],None,None,None,None]))
-    proceso_acumular_agentes = threading.Thread(target=exportar_tramos_faltantes,args=([['agentes'],None,None,None,None]))
-    proceso_acumular_actividad_agentes = threading.Thread(target=exportar_tramos_faltantes,args=([['actividad_por_agente','actividad_por_agente_cola'],None,None,None,None]))
-    proceso_acumular_estados_agente = threading.Thread(target=exportar_tramos_faltantes,args=([['estados_por_agente'],None,None,None,None]))
-    proceso_acumular_listado_llamadas = threading.Thread(target=exportar_tramos_faltantes,args=([['listado_llamadas'],None,None,None,None]))
-    proceso_acumular_listado_acd = threading.Thread(target=exportar_tramos_faltantes,args=([['listado_acd'],None,None,None,None]))
+    proceso_acumular_colas = threading.Thread(target=exportar_tramos_faltantes,args=([['colas'],None,None,None,None,None]))
+    proceso_acumular_tramos = threading.Thread(target=exportar_tramos_faltantes,args=([['tramos'],None,None,None,None,None]))
+    proceso_acumular_colas_tramos = threading.Thread(target=exportar_tramos_faltantes,args=([['colas_tramos'],None,None,None,None,None]))
+    proceso_acumular_colas_individual = threading.Thread(target=exportar_tramos_faltantes,args=([['colas_individual_tramos'],None,None,None,None,None]))
+    proceso_acumular_agentes = threading.Thread(target=exportar_tramos_faltantes,args=([['agentes'],None,None,None,None,None]))
+    proceso_acumular_actividad_agentes = threading.Thread(target=exportar_tramos_faltantes,args=([['actividad_por_agente','actividad_por_agente_cola'],None,None,None,None,None]))
+    proceso_acumular_estados_agente = threading.Thread(target=exportar_tramos_faltantes,args=([['estados_por_agente'],None,None,None,None,None]))
+    proceso_acumular_listado_llamadas = threading.Thread(target=exportar_tramos_faltantes,args=([['listado_llamadas'],None,None,None,None,None]))
+    proceso_acumular_listado_acd = threading.Thread(target=exportar_tramos_faltantes,args=([['listado_acd'],None,None,None,None,None]))
     
     
     lista_procesos = {
