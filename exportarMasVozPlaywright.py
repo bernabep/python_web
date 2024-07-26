@@ -1656,7 +1656,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
                 if largo>3:
                     acumular_datos(archivo_nuevo=os.path.join(ruta_destino,f'Informe_{tipoInforme}.csv'),archivo_acumulado=archivo_acumulado)
                     eliminar_duplicados(archivo=archivo_acumulado,columnas_unicas=columnas_unicas)
-                    eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_tramos,desde_la_fecha=fechaDatos)
+                    eliminar_registros_por_num_dias_atras(archivo=archivo_acumulado,num_dias_atras=num_dias_para_acumular_colas_individual_tramos,desde_la_fecha=fechaDatos)
                     
             else:
                 print(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
