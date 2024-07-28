@@ -88,7 +88,7 @@ lista_colas = [
 # 'VY S3 Premium Fr K', #no existen
 ]
 lista_informes_a_sacar=['colas_individual_tramos']
-lista_informes_a_sacar=['colas','tramos','colas_tramos','actividad_por_agente','actividad_por_agente_cola','estados_por_agente','agentes','listado_llamadas','listado_acd','skills_agentes']
+lista_informes_a_sacar=['colas','tramos','colas_individual_tramos','colas_tramos','actividad_por_agente','actividad_por_agente_cola','estados_por_agente','agentes','listado_llamadas','listado_acd','skills_agentes']
 silencioso=True #!Para que no muestre tantos print, hay que poner True
 segundos_de_espera = 3 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
 segundos_de_espera_descarga = 60 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
@@ -175,6 +175,7 @@ def mostrar_mensaje(mensajes):
         
         #creo nueva lista de mensaje, evitando los saltos de linea que puedan tener los mensajes
         mensajes_ordenados = []
+        mensaje_final = ""
         for mensaje in mensajes:
             lineas = mensaje.split('\n')
             mensajes_ordenados.extend(lineas)           
@@ -182,7 +183,6 @@ def mostrar_mensaje(mensajes):
         largo = 0
         for linea in mensajes_ordenados:
             if len(linea)> largo:largo = len(linea)
-        largo
         
         # print(f"\n\n{'#'*(largo+10)}")
         # print(f"# {'#'*(largo+6)} #")
@@ -191,10 +191,25 @@ def mostrar_mensaje(mensajes):
         # print(f"# {'#'*(largo+6)} #")
         # print(f"{'#'*(largo+10)}\n")
         
-        print(f"\n{'#'*(largo+6)}")
+        
+        # print(f"\n{'#'*(largo+6)}")
+        # for linea in mensajes_ordenados:
+        #     if len(linea)==0 or linea == "":
+        #         pass
+        #     print(f"## {linea}{' '*(largo-len(linea))} ##")
+        # print(f"{'#'*(largo+6)}\n")
+        # mensajes_ordenados = None
+        
+        mensaje_final += f"{'#'*(largo+6)}\n"
+        
         for linea in mensajes_ordenados:
-            print(f"## {linea}{' '*(largo-len(linea))} ##")
-        print(f"{'#'*(largo+6)}")
+            if len(linea)==0 or linea == "":
+                pass
+            mensaje_final += (f"## {linea}{' '*(largo-len(linea))} ##\n")
+        mensaje_final += f"{'#'*(largo+6)}\n"
+        print(mensaje_final)
+        mensajes_ordenados = []
+        mensaje_final = ""
 
     
 def abrir_navegador(oculto=False,mi_playwright=None):   
@@ -203,6 +218,7 @@ def abrir_navegador(oculto=False,mi_playwright=None):
         
     navegador = mi_playwright.chromium.launch(headless=oculto)
     return navegador
+
 
 def abrir_pagina(navegador:Browser,url:str,resolucion=[1920,1080]):
     resolution = {"width": resolucion[0], "height": resolucion[1]}
@@ -1144,7 +1160,7 @@ def obtener_tramos_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_fin,colum
         for fecha in reversed(lista_fechas_tramos_faltantes):
             mensaje +=f'\n{fecha}'
     else:
-        mensaje += f'\nEn el archivo {archivo} no faltan fechas ni tramos entre {fecha_inicio} and {fecha_fin}'
+        mensaje += f'En el archivo {archivo} no faltan fechas ni tramos entre {fecha_inicio} and {fecha_fin}'
     return lista_fechas_tramos_faltantes,mensaje
            
 def obtener_tramos_con_cola_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_fin,columna_fecha,separador=';',formato_fecha='%Y-%m-%d'):
@@ -1223,8 +1239,7 @@ def obtener_tramos_con_cola_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_
            
 
 def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=None,pagina=None,frame=None,mi_playwright=None,mensajes=None):
-    if mi_playwright == None:
-        mi_playwright = lanzar_playwright()
+
         
     if mensajes == None:
         mensajes = []
@@ -1590,6 +1605,8 @@ def prueba_crear_tabla_fija():
     print (resultado)
 
 def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30),lista_informes=lista_informes_a_sacar, cola = None,recuperar_datos=True,navegador=None,pagina=None,frame=None,mi_playwright=None,mensajes=None):
+    if mi_playwright == None:
+        mi_playwright = lanzar_playwright()
     if mensajes == None:
         mensajes = []
     
@@ -1611,18 +1628,36 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
        
        
     fecha_hora_inicio_tramo = datetime.combine(fechaDatos,hora_inicio)
-    if(fecha_hora_inicio_tramo>(datetime.now()-timedelta(minutes=30))):
+    if fecha_hora_inicio_tramo>(datetime.now()-timedelta(minutes=30)):
         mensajes.append(f'Se está solicitando actualizar con fecha {fecha_hora_inicio_tramo} y ese tramo aun no está cerrado ')
         mostrar_mensaje(mensajes)
-        mensajes.clear()
+        # mensajes.clear()
+        mensajes=[]
         return True
 
-    #Si está fuera de horario, no exporta nada, primer_tramo_Del_dia está configurado en 9
-    if(fecha_hora_inicio_tramo.hour<primer_tramo_del_dia):
+    #Si está fuera de horario, no exporta nada, primer_tramo_Del_dia está configurado en 9, si hay que recuperar datos, entonces empieza a exportar tramos faltantes
+    if fecha_hora_inicio_tramo.hour<primer_tramo_del_dia:
         mensajes.append(f'El tramo {fecha_hora_inicio_tramo} está fuera del horario del servicio, el primer tramo es el de las {primer_tramo_del_dia}')
         mostrar_mensaje(mensajes)
-        mensajes.clear()
-        return True
+        # mensajes.clear()
+        mensajes=[]
+        if recuperar_datos :
+            mensajes.append("Buscando tramos que faltan en el acumulado")
+            mostrar_mensaje(mensajes)
+            mensajes=[]
+            
+            """
+            IMPORTANTE Esto busca y exporta los tramos que faltan en los acumulados
+            """  
+            try:
+                exportar_tramos_faltantes(lista_informes=lista_informes,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)            
+            except:
+                exportar_tramos_faltantes(lista_informes=lista_informes,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
+            mostrar_mensaje(mensajes)
+            # mensajes.clear()
+            mensajes=[]
+        else:
+            return True
  
 
     """
@@ -1656,7 +1691,8 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
         mostrar_mensaje(mensajes)
-        mensajes.clear()
+        # mensajes.clear()
+        mensajes=[]
         
         
 
@@ -1692,7 +1728,8 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
         mostrar_mensaje(mensajes)
-        mensajes.clear()
+        # mensajes.clear()
+        mensajes=[]
 
 
     """
@@ -1727,7 +1764,8 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
         mostrar_mensaje(mensajes)
-        mensajes.clear()
+        # mensajes.clear()
+        mensajes=[]
 
 
         """
@@ -1770,7 +1808,8 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
             else:
                 mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
         mostrar_mensaje(mensajes)
-        mensajes.clear()
+        # mensajes.clear()
+        mensajes=[]
 
 
             
@@ -1805,7 +1844,8 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
         mostrar_mensaje(mensajes)
-        mensajes.clear()
+        # mensajes.clear()
+        mensajes=[]
         
             
     """
@@ -1840,7 +1880,8 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
         mostrar_mensaje(mensajes)
-        mensajes.clear()
+        # mensajes.clear()
+        mensajes=[]
 
 
         
@@ -1877,7 +1918,8 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
         mostrar_mensaje(mensajes)
-        mensajes.clear()
+        # mensajes.clear()
+        mensajes=[]
 
 
    
@@ -1918,7 +1960,8 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         else:
             mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
         mostrar_mensaje(mensajes)
-        mensajes.clear()
+        # mensajes.clear()
+        mensajes=[]
 
 
 
@@ -1961,7 +2004,8 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
             else:
                 mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
         mostrar_mensaje(mensajes)
-        mensajes.clear()
+        # mensajes.clear()
+        mensajes=[]
 
 
 
@@ -2001,7 +2045,8 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
             else:
                 mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
         mostrar_mensaje(mensajes)
-        mensajes.clear()
+        # mensajes.clear()
+        mensajes=[]
 
 
     """
@@ -2028,7 +2073,8 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
             else:
                 mensajes.append(f'Hubo un error al sacar el tipo de informe {tipoInforme}')
             mostrar_mensaje(mensajes)
-            mensajes.clear()
+            # mensajes.clear()
+            mensajes=[]
 
 
     if recuperar_datos:
@@ -2040,11 +2086,13 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
         except:
             exportar_tramos_faltantes(lista_informes=lista_informes,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
         mostrar_mensaje(mensajes)
-        mensajes.clear()
+        # mensajes.clear()
+        mensajes=[]
     
     
     mostrar_mensaje(mensajes)
-    mensajes.clear()
+    # mensajes.clear()
+    mensajes=[]
 
     pagina.close()
     pagina = None
@@ -2058,7 +2106,7 @@ def iniciarRobot(todo_a_la_vez=True):
             ejecutar_en_minutos(funcion_a_lanzar=robot_informes_masvoz,lista_minutos=lista_minutos)        
     except Exception as error:
             logger.error("Error:", exc_info=error)
-            print(f"#ERROR\n#ERROR\nReiniciando Robot\n#ERROR\n#ERROR")
+            mostrar_mensaje(f"#ERROR\n#ERROR\nReiniciando Robot\n#ERROR\n#ERROR")
             iniciarRobot()
         
 
