@@ -1,4 +1,10 @@
-mi_variable='hola como estas, mi nombre es bernabé'
-relleno = len('Empezando a sacar el informe_')
+from datetime import datetime,time,timedelta
+from dateutil.relativedelta import relativedelta
+def calcular_dias_acumular_por_meses():    
+    hoy = datetime.today()
+    primer_dia_mes_actual = datetime(hoy.year,hoy.month,1)
+    ultimo_dia_mes_pasado = primer_dia_mes_actual-timedelta(days=1)
+    num_dias_desde_mes_pasados = (ultimo_dia_mes_pasado.day + hoy.day)-1
+    return num_dias_desde_mes_pasados
 
-print (f"{'#'*(len(mi_variable)+8)}\n### {mi_variable} ###\n{'#'*(len(mi_variable)+8)}")
+print (calcular_dias_acumular_por_meses())

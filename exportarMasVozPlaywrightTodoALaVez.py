@@ -16,24 +16,13 @@ from playwright.sync_api import sync_playwright,Browser,expect
 from email.message import EmailMessage
 #Desactivar algunos warning en la terminal
 # warnings.filterwarnings("ignore", category=DeprecationWarning)
+def calcular_dias_para_acumular_por_meses():    
+    hoy = datetime.today()
+    primer_dia_mes_actual = datetime(hoy.year,hoy.month,1)
+    ultimo_dia_mes_pasado = primer_dia_mes_actual-timedelta(days=1)
+    num_dias_desde_mes_pasados = (ultimo_dia_mes_pasado.day + hoy.day)-1
+    return num_dias_desde_mes_pasados
 
-def iniciar_log(mb_max=1):
-    log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
-
-    ruta_actual = os.getcwd()
-    logFile = os.path.join(ruta_actual,'errores.log')
-
-    my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=mb_max*1024*1024, 
-                                    backupCount=2, encoding=None, delay=0)
-    my_handler.setFormatter(log_formatter)
-    # my_handler.setLevel(logging.INFO)
-    my_handler.setLevel(logging.DEBUG)
-
-    logger = logging.getLogger('root')
-    logger.setLevel(logging.INFO)
-
-    logger.addHandler(my_handler)
-    return logger
 
 #!ASIGNO VARIABLES GLOBALES
 lista_minutos=[15,45]
@@ -104,12 +93,11 @@ lista_informes_a_sacar=['colas_individual_tramos']
 lista_informes_a_sacar=['colas','tramos','colas_individual_tramos','colas_tramos','actividad_por_agente','actividad_por_agente_cola','estados_por_agente','agentes','listado_llamadas','listado_acd','skills_agentes']
 silencioso=True #!Para que no muestre tantos print, hay que poner True
 segundos_de_espera = 3 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
-segundos_de_espera_descarga = 60 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
-segundos_de_espera_descarga_aumentado = 120 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
+segundos_de_espera_descarga = 120 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
+segundos_de_espera_descarga_aumentado = 180 #!Dependiendo del PC, los segundos de espera tienen que aumentarse, afecta sobretodo al navegar por la web
 num_dias_para_acumular_colas = 5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
 num_dias_para_acumular_tramos = 5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
 num_dias_para_acumular_colas_tramos = 1 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
-num_dias_para_acumular_colas_individual_tramos = 22 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
 num_dias_para_acumular_actividad_por_agente = 5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
 num_dias_para_acumular_actividad_por_agente_cola = 5 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
 num_dias_para_acumular_estados_por_agente = 3 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
@@ -122,6 +110,10 @@ ruta_destino = rf"C:\Users\bpandofer\Desktop\Robot" #!ruta de destino donde se a
 ruta_destino = rf"A:\2.Vueling\Importar\Robot" #!ruta de destino donde se almacenan los archivos definitivos
 ruta_destino = f"\\\\bcnsmb01.grupokonecta.corp\\SERVICIOS\\BOLL_COMUN_ANALISTAS\\Importar\\Robot" #!ruta de destino donde se almacenan los archivos definitivos
 ruta_destino = rf"C:\Users\berna\Desktop\Masvoz" #!ruta de destino donde se almacenan los archivos definitivos
+
+###Asigno dias para obtener todos los tramos del mes actual y el pasado
+# num_dias_para_acumular_colas_individual_tramos = 22 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
+num_dias_para_acumular_colas_individual_tramos = calcular_dias_para_acumular_por_meses() #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
 
 #?VARIABLES RELATIVAS A NAVICAT
 host="172.15.9.179"
@@ -148,6 +140,23 @@ miPass = "BSPfBSPf008*"
 url = 'https://manager.masvoz.es/'
 
 
+def iniciar_log(mb_max=1):
+    log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
+
+    ruta_actual = os.getcwd()
+    logFile = os.path.join(ruta_actual,'errores.log')
+
+    my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=mb_max*1024*1024, 
+                                    backupCount=2, encoding=None, delay=0)
+    my_handler.setFormatter(log_formatter)
+    # my_handler.setLevel(logging.INFO)
+    my_handler.setLevel(logging.DEBUG)
+
+    logger = logging.getLogger('root')
+    logger.setLevel(logging.INFO)
+
+    logger.addHandler(my_handler)
+    return logger
 
 def comprobar_unidad_de_red(letra_unidad):
     existe = os.path.exists(f"{letra_unidad}:")    
@@ -1819,7 +1828,7 @@ def robot_informes_masvoz(fecha_hora_inicio=datetime.now()-timedelta(minutes=30)
 
     if(tipoInforme in lista_informes):
         if fecha_hora_inicio.date() == datetime.now().date():
-            mensajes.append("No se exportan datos de Hoy en colas_individual_tramos")
+            mensajes.append("No se exportan datos de hoy en colas_individual_tramos")
         else:
             mensajes.append(f"Empezando a sacar el informe_{tipoInforme}")
             mi_playwright,navegador,pagina,frame = obtener_web_masvoz(navegador=navegador,pagina=pagina,mi_playwright=mi_playwright)
