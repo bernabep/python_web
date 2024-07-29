@@ -7,20 +7,39 @@ import shutil
 import logging
 import smtplib
 import mysql.connector as mysql
+from logging.handlers import RotatingFileHandler
 from time import sleep
 from copy import deepcopy
 from datetime import time, timedelta, datetime
 from playwright.sync_api import sync_playwright,Browser,expect
 from email.message import EmailMessage
 #Desactivar algunos warning en la terminal
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-#Crea un Log de erroes
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler("errores.log")
-stream_handler = logging.StreamHandler()
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
+# warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
+
+
+
+
+def iniciar_log(mb_max=1):
+    log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
+
+    ruta_actual = os.getcwd()
+    logFile = os.path.join(ruta_actual,'errores.log')
+
+    my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=mb_max*1024*1024, 
+                                    backupCount=2, encoding=None, delay=0)
+    my_handler.setFormatter(log_formatter)
+    # my_handler.setLevel(logging.INFO)
+    my_handler.setLevel(logging.DEBUG)
+
+    logger = logging.getLogger('root')
+    logger.setLevel(logging.INFO)
+
+    logger.addHandler(my_handler)
+    return logger
+
+
 
 #!ASIGNO VARIABLES GLOBALES
 lista_minutos=[15,45]
@@ -108,6 +127,7 @@ ruta_destino = f"C:\\Users\\berna\\Desktop\\MUESTRA" #!ruta de destino donde se 
 ruta_destino = f"\\\\bcnsmb01.grupokonecta.corp\\SERVICIOS\\BOLL_COMUN_ANALISTAS\\Importar\\Robot" #!ruta de destino donde se almacenan los archivos definitivos
 ruta_destino = rf"C:\Users\bpandofer\Desktop\Robot" #!ruta de destino donde se almacenan los archivos definitivos
 ruta_destino = rf"C:\Users\berna\Desktop\Masvoz" #!ruta de destino donde se almacenan los archivos definitivos
+ruta_destino = rf"A:\2.Vueling\Importar\Robot" #!ruta de destino donde se almacenan los archivos definitivos
 
 #?VARIABLES RELATIVAS A NAVICAT
 host="172.15.9.179"
@@ -133,9 +153,7 @@ miPass = "BSPfBSPf008*"
 
 url = 'https://manager.masvoz.es/'
 
-# ---------------------------------------------------------------------------------------------------------------
-# MATAR PROCESO WINDOWS POR NOMBRE
-# ---------------------------------------------------------------------------------------------------------------
+
 def matar_proceso(nombre_proceso):
     for proc in psutil.process_iter(["pid", "name"]):
         if nombre_proceso.lower() in proc.info["name"].lower():
@@ -210,7 +228,6 @@ def mostrar_mensaje(mensajes):
         print(mensaje_final)
         mensajes_ordenados = []
         mensaje_final = ""
-
     
 def abrir_navegador(oculto=False,mi_playwright=None):   
     if mi_playwright == None:
@@ -218,7 +235,6 @@ def abrir_navegador(oculto=False,mi_playwright=None):
         
     navegador = mi_playwright.chromium.launch(headless=oculto)
     return navegador
-
 
 def abrir_pagina(navegador:Browser,url:str,resolucion=[1920,1080]):
     resolution = {"width": resolucion[0], "height": resolucion[1]}
@@ -294,8 +310,6 @@ def obtener_web_masvoz(seccion='ESTADÍSTICAS',maximizado=False,navegador=None,p
       
     return mi_playwright,navegador,pagina,frame
 
-  
-       
 def descargar_colas_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=datetime.today().date()):
     mensaje = None
     finalizado_ok = False
@@ -339,7 +353,7 @@ def descargar_colas_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=datetime.
     nombre_archivo = os.path.join(ruta_destino,'Informe_colas.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin}"
 
     return finalizado_ok,mensaje
 
@@ -383,7 +397,7 @@ def descargar_tramos_masmoz(frame,pagina,fecha_inicio=datetime.today().date()):
     nombre_archivo = os.path.join(ruta_destino,'Informe_tramos.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin}"
 
     return finalizado_ok,mensaje
 
@@ -431,13 +445,13 @@ def descargar_colas_tramos_masvoz(frame,pagina,hora_inicio:time, fecha_inicio=da
     nombre_archivo = os.path.join(ruta_destino,'Informe_colas_tramos.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin}"
 
     return finalizado_ok,mensaje
 
 def descargar_colas_individual_tramos_masvoz(frame,pagina,fecha_inicio=datetime.today().date(),cola='Todas las Colas'):
     mensaje = None
-    mensaje = f"Control {fecha_inicio} {cola} "
+    # mensaje = f"Control {fecha_inicio} {cola} "
     finalizado_ok = False    
    
     fecha_inicio_filtro = fecha_inicio
@@ -490,7 +504,7 @@ def descargar_colas_individual_tramos_masvoz(frame,pagina,fecha_inicio=datetime.
     nombre_archivo = os.path.join(ruta_destino,'Informe_colas_individual_tramos.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    mensaje += f"Se ha exportado la cola {cola} {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
+    mensaje = f"Se ha exportado la cola {cola} {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin}"
 
     return finalizado_ok,mensaje
 
@@ -535,7 +549,7 @@ def descargar_actividad_por_agente(frame,pagina,fecha_inicio=datetime.today().da
     nombre_archivo = os.path.join(ruta_destino,'Informe_actividad_por_agente.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin}"
 
     return finalizado_ok,mensaje
 
@@ -580,7 +594,7 @@ def descargar_actividad_por_agente_cola (frame,pagina,fecha_inicio=datetime.toda
     nombre_archivo = os.path.join(ruta_destino,'Informe_actividad_por_agente_cola.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin}"
 
     return finalizado_ok,mensaje
 
@@ -625,7 +639,7 @@ def descargar_estados_por_agente(frame,pagina,fecha_inicio=datetime.today().date
     nombre_archivo = os.path.join(ruta_destino,'Informe_estados_por_agente.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin}"
 
     return finalizado_ok,mensaje
 
@@ -670,7 +684,7 @@ def descargar_agentes(frame,pagina,fecha_inicio=datetime.today().date()):
     nombre_archivo = os.path.join(ruta_destino,'Informe_agentes.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin}"
 
     return finalizado_ok,mensaje
  
@@ -741,11 +755,10 @@ def descargar_listado_llamadas(frame,pagina,fecha_inicio=datetime.today().date()
     nombre_archivo = os.path.join(ruta_destino,'Informe_listado_llamadas.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin}"
 
     return finalizado_ok,mensaje
         
-
 def descargar_listado_acd(frame,pagina,fecha_inicio=datetime.today().date()):
     mensaje = None
     finalizado_ok = False
@@ -798,10 +811,9 @@ def descargar_listado_acd(frame,pagina,fecha_inicio=datetime.today().date()):
     nombre_archivo = os.path.join(ruta_destino,'Informe_listado_acd.csv')
     download.save_as(nombre_archivo)
     finalizado_ok = nombre_archivo
-    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin} "
+    mensaje = f"Se ha exportado {nombre_archivo} Desde el {str_fecha_inicio_filtro} {str_hora_inicio} al {str_fecha_fin_filtro} {str_hora_fin}"
 
     return finalizado_ok,mensaje
-
 
 def descargar_skills_agentes(frame,pagina):
     sleep(10)
@@ -1162,6 +1174,50 @@ def obtener_tramos_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_fin,colum
     else:
         mensaje += f'En el archivo {archivo} no faltan fechas ni tramos entre {fecha_inicio} and {fecha_fin}'
     return lista_fechas_tramos_faltantes,mensaje
+
+def crear_lista_de_tramos(fecha_inicio:datetime,fecha_fin:datetime,ultimo_tramo_del_dia=False,minutosPorTramo=30):
+    mensaje = ""
+    lista_fechas_tramos=[]
+   
+    ###Creo lista de fechas y horas entre fecha_inicio y fecha_fin
+    #elimino segundo y milisegundos a fechas
+    fecha_inicio = datetime.replace(fecha_inicio,second=0)
+    fecha_inicio = datetime.replace(fecha_inicio,microsecond=0)
+   
+    fecha_fin = datetime.replace(fecha_fin,second=0)
+    fecha_fin = datetime.replace(fecha_fin,microsecond=0)
+    ahora = datetime.now()-timedelta(minutes=30)
+   
+    #Se busca el tramo ya cerrado, si son 15:25, exporta tramo de 14:30 a 14:59:59
+    horaActual = ahora.hour
+    minutoActual = ahora.minute
+   
+    if ultimo_tramo_del_dia:
+        tiempo_delta = timedelta(hours=24)
+        fecha_inicio = datetime.combine(datetime.date(fecha_inicio),time(hour=23,minute=30))
+        fecha_fin = datetime.combine(datetime.date(fecha_fin),time(hour=horaActual,minute=minutoActual))
+    else:
+        tiempo_delta = timedelta(minutes=minutosPorTramo)
+       
+        if(fecha_inicio.minute<minutosPorTramo):
+            fecha_inicio = datetime.replace(fecha_inicio,minute=0)
+        else:
+            fecha_inicio = datetime.replace(fecha_inicio,minute=minutosPorTramo)
+           
+       
+    fecha_inicioWhile = fecha_inicio
+    while fecha_inicioWhile.date() <= fecha_fin.date():
+        if(fecha_inicioWhile.hour>=primer_tramo_del_dia):#se añade la fecha y hora si es superior a la variable primer_tramo_del_dia, normalmente seteado en 8 para que exporte tramos de 8 hasta 23,30 hrs.
+            lista_fechas_tramos.append(fecha_inicioWhile)
+        fecha_inicioWhile += tiempo_delta
+       
+    if (len(lista_fechas_tramos)>0):
+        mensaje += f'Se han listado las siguientes fechas y tramos:'
+        for fecha in reversed(lista_fechas_tramos):
+            mensaje +=f'\n{fecha.strftime(format="%d-%m-%Y %H:%M:%S")}'
+    else:
+        mensaje += f'No se han listado fechas ni tramos entre {fecha_inicio} and {fecha_fin}'
+    return lista_fechas_tramos,mensaje
            
 def obtener_tramos_con_cola_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_fin,columna_fecha,separador=';',formato_fecha='%Y-%m-%d'):
     mensaje = None   
@@ -1237,7 +1293,6 @@ def obtener_tramos_con_cola_faltantes_csv_acumulados(archivo,fecha_inicio,fecha_
     
     return lista_fechas_tramos_faltantes,mensaje
            
-
 def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=None,pagina=None,frame=None,mi_playwright=None,mensajes=None):
 
         
@@ -1260,7 +1315,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=No
                 if(fecha.hour>=primer_tramo_del_dia):
                     robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
-                logger.error("Errror:", exc_info=error)
+                logger.error("Error:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
                 robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas'],recuperar_datos=True,navegador=navegador,mi_playwright=mi_playwright,mensajes=mensajes)
                 
@@ -1288,7 +1343,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=No
                 if(fecha.hour>=primer_tramo_del_dia):
                     robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['tramos'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
-                logger.error("Errror:", exc_info=error)
+                logger.error("Error:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
                 robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['tramos'],recuperar_datos=True,navegador=navegador,mi_playwright=mi_playwright,mensajes=mensajes)
             else:
@@ -1313,7 +1368,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=No
                 if(fecha.hour>=primer_tramo_del_dia):
                     robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas_tramos'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
-                logger.error("Errror:", exc_info=error)
+                logger.error("Error:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
                 robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas_tramos'],recuperar_datos=True,navegador=navegador,mi_playwright=mi_playwright,mensajes=mensajes)
     
@@ -1339,7 +1394,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=No
                 if(fecha.hour>=primer_tramo_del_dia):
                     robot_informes_masvoz(fecha,lista_informes=['actividad_por_agente'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
-                logger.error("Errror:", exc_info=error)
+                logger.error("Error:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
                 robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['actividad_por_agente'],recuperar_datos=True,navegador=navegador,mi_playwright=mi_playwright,mensajes=mensajes)
     
@@ -1365,7 +1420,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=No
                 if(fecha.hour>=primer_tramo_del_dia):
                     robot_informes_masvoz(fecha,lista_informes=['actividad_por_agente_cola'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
-                logger.error("Errror:", exc_info=error)
+                logger.error("Error:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
                 robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['actividad_por_agente_cola'],recuperar_datos=True,navegador=navegador,mi_playwright=mi_playwright,mensajes=mensajes)
     
@@ -1391,7 +1446,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=No
                 if(fecha.hour>=primer_tramo_del_dia):
                     robot_informes_masvoz(fecha,lista_informes=['estados_por_agente'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
-                logger.error("Errror:", exc_info=error)
+                logger.error("Error:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
                 robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['estados_por_agente'],recuperar_datos=True,navegador=navegador,mi_playwright=mi_playwright,mensajes=mensajes)
     
@@ -1417,7 +1472,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=No
                 if(fecha.hour>=primer_tramo_del_dia):
                     robot_informes_masvoz(fecha,lista_informes=['agentes'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
-                logger.error("Errror:", exc_info=error)
+                logger.error("Error:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
                 robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['agentes'],recuperar_datos=True,navegador=navegador,mi_playwright=mi_playwright,mensajes=mensajes)
     
@@ -1443,7 +1498,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=No
                 if(fecha.hour>=primer_tramo_del_dia):
                     robot_informes_masvoz(fecha,lista_informes=['listado_llamadas'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
-                logger.error("Errror:", exc_info=error)
+                logger.error("Error:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
                 robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['listado_llamadas'],recuperar_datos=True,navegador=navegador,mi_playwright=mi_playwright,mensajes=mensajes)
     
@@ -1469,7 +1524,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=No
                 if(fecha.hour>=primer_tramo_del_dia):
                     robot_informes_masvoz(fecha,lista_informes=['listado_acd'],recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
-                logger.error("Errror:", exc_info=error)
+                logger.error("Error:", exc_info=error)
                 print(f'Volvemos a intentar con la fecha {fecha_inicio}')
                 robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['listado_acd'],recuperar_datos=True,navegador=navegador,mi_playwright=mi_playwright,mensajes=mensajes)
     
@@ -1496,7 +1551,7 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=No
                 if(fecha.hour>=primer_tramo_del_dia):
                     robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas_individual_tramos'],cola = cola,recuperar_datos=True,navegador=navegador,pagina=pagina,frame=frame,mi_playwright=mi_playwright,mensajes=mensajes)
             except Exception as error:
-                logger.error("Errror:", exc_info=error)
+                logger.error("Error:", exc_info=error)
                 print(f'Volvemos a intentar con {lista_informes} con la fecha {fecha_inicio}')
                 if(fecha.hour>=primer_tramo_del_dia):
                     robot_informes_masvoz(fecha_hora_inicio=fecha,lista_informes=['colas_individual_tramos'],cola = cola,recuperar_datos=True,navegador=navegador,mi_playwright=mi_playwright,mensajes=mensajes)
@@ -1504,7 +1559,6 @@ def exportar_tramos_faltantes(lista_informes=lista_informes_a_sacar,navegador=No
                     fecha_inicio += timedelta(minutes=30)        
             return mensajes #con este hago que solo se ejecute la primera fecha encontrada, ya que llama a la funcion robot_informes_masvoz, y esa función al finalizar vuelve a llamar a esta exportar_tramos_faltantes
     
-        
 def ejecutar_en_minutos(funcion_a_lanzar,lista_minutos=[1,31]):
     # matar_proceso('CHROME')
     primeraVuelta = True
@@ -2109,7 +2163,6 @@ def iniciarRobot(todo_a_la_vez=True):
             mostrar_mensaje(f"#ERROR\n#ERROR\nReiniciando Robot\n#ERROR\n#ERROR")
             iniciarRobot()
         
-
 #SOLO SE LANZA SI ESTE ES EL MODULO PRINCIPAL
 
 
@@ -2168,7 +2221,7 @@ def lanzar_varios_robot_informes_masvoz():
         
     for proceso in lista_procesos:
         proceso.join()
-    
 if __name__ == "__main__":
+    logger = iniciar_log(mb_max=5)
     iniciarRobot(todo_a_la_vez=True)
 
