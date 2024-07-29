@@ -3,6 +3,7 @@ import warnings
 import threading
 import pandas as pd
 import os
+import sys
 import shutil
 import logging
 import smtplib
@@ -15,11 +16,6 @@ from playwright.sync_api import sync_playwright,Browser,expect
 from email.message import EmailMessage
 #Desactivar algunos warning en la terminal
 # warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-
-
-
-
 
 def iniciar_log(mb_max=1):
     log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
@@ -38,8 +34,6 @@ def iniciar_log(mb_max=1):
 
     logger.addHandler(my_handler)
     return logger
-
-
 
 #!ASIGNO VARIABLES GLOBALES
 lista_minutos=[15,45]
@@ -124,10 +118,10 @@ num_dias_para_acumular_listado_llamadas = 3 #!Importante, si se ponen menos día
 num_dias_para_acumular_listado_acd = 3 #!Importante, si se ponen menos días, se eliminarán del acumulado los días que no cumplen la condición
 primer_tramo_del_dia = 8 #!Importante, necesario para saber si sacamos todos los tramos desde las 0 hrs o desde las 8 de la mañana por ejemplo
 ruta_destino = f"C:\\Users\\berna\\Desktop\\MUESTRA" #!ruta de destino donde se almacenan los archivos definitivos
-ruta_destino = f"\\\\bcnsmb01.grupokonecta.corp\\SERVICIOS\\BOLL_COMUN_ANALISTAS\\Importar\\Robot" #!ruta de destino donde se almacenan los archivos definitivos
 ruta_destino = rf"C:\Users\bpandofer\Desktop\Robot" #!ruta de destino donde se almacenan los archivos definitivos
-ruta_destino = rf"C:\Users\berna\Desktop\Masvoz" #!ruta de destino donde se almacenan los archivos definitivos
 ruta_destino = rf"A:\2.Vueling\Importar\Robot" #!ruta de destino donde se almacenan los archivos definitivos
+ruta_destino = f"\\\\bcnsmb01.grupokonecta.corp\\SERVICIOS\\BOLL_COMUN_ANALISTAS\\Importar\\Robot" #!ruta de destino donde se almacenan los archivos definitivos
+ruta_destino = rf"C:\Users\berna\Desktop\Masvoz" #!ruta de destino donde se almacenan los archivos definitivos
 
 #?VARIABLES RELATIVAS A NAVICAT
 host="172.15.9.179"
@@ -150,9 +144,14 @@ miCorreo= "bernabe.pando@konecta-group.com"
 destinatarioCorreo= "bernabe.pando@konecta-group.com"
 # miPass = "odix zpmr kvvy satr"
 miPass = "BSPfBSPf008*"
-
+#?VARIABLES RELATIVAS A MASVOZ
 url = 'https://manager.masvoz.es/'
 
+
+
+def comprobar_unidad_de_red(letra_unidad):
+    existe = os.path.exists(f"{letra_unidad}:")    
+    return existe
 
 def matar_proceso(nombre_proceso):
     for proc in psutil.process_iter(["pid", "name"]):
@@ -194,29 +193,17 @@ def mostrar_mensaje(mensajes):
         #creo nueva lista de mensaje, evitando los saltos de linea que puedan tener los mensajes
         mensajes_ordenados = []
         mensaje_final = ""
-        for mensaje in mensajes:
-            lineas = mensaje.split('\n')
-            mensajes_ordenados.extend(lineas)           
+        if type(mensajes)==list:
             
+            for mensaje in mensajes:
+                lineas = mensaje.split('\n')
+                mensajes_ordenados.extend(lineas)           
+        else:
+            mensajes_ordenados = mensajes.split('\n')
+        
         largo = 0
         for linea in mensajes_ordenados:
             if len(linea)> largo:largo = len(linea)
-        
-        # print(f"\n\n{'#'*(largo+10)}")
-        # print(f"# {'#'*(largo+6)} #")
-        # for linea in mensajes_ordenados:
-        #     print(f"# ## {linea}{' '*(largo-len(linea))} ## #")
-        # print(f"# {'#'*(largo+6)} #")
-        # print(f"{'#'*(largo+10)}\n")
-        
-        
-        # print(f"\n{'#'*(largo+6)}")
-        # for linea in mensajes_ordenados:
-        #     if len(linea)==0 or linea == "":
-        #         pass
-        #     print(f"## {linea}{' '*(largo-len(linea))} ##")
-        # print(f"{'#'*(largo+6)}\n")
-        # mensajes_ordenados = None
         
         mensaje_final += f"{'#'*(largo+6)}\n"
         
@@ -259,8 +246,7 @@ def obtener_web_masvoz(seccion='ESTADÍSTICAS',maximizado=False,navegador=None,p
     
     user = 'vy_konecta_sup01'
     password = 'Konecta27!'
-    # driver = abrir_navegador()
-    password = 'Konecta27!'
+
     if mi_playwright == None:
         try:
             mi_playwright = lanzar_playwright()
@@ -2223,5 +2209,8 @@ def lanzar_varios_robot_informes_masvoz():
         proceso.join()
 if __name__ == "__main__":
     logger = iniciar_log(mb_max=5)
+    if not os.path.exists(ruta_destino):
+        mostrar_mensaje(f"No existe la ruta {ruta_destino}\n!!COMPRUEBA MAPEO Y RUTA COMPLETA ANTES DE LANZAR EL ROBOT!!")
+        sys.exit()
     iniciarRobot(todo_a_la_vez=True)
 
