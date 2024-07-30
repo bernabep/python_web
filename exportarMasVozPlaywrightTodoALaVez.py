@@ -143,7 +143,7 @@ url = 'https://manager.masvoz.es/'
 def iniciar_log(mb_max=1):
     log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
 
-    ruta_actual = os.getcwd()
+    ruta_actual = os.path.dirname(os.path.realpath(__file__))
     logFile = os.path.join(ruta_actual,'errores.log')
 
     my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=mb_max*1024*1024, 
