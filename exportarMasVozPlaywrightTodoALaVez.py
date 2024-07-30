@@ -195,8 +195,7 @@ def lanzar_playwright():
     # except Exception as e:
     #     print(e)
 
-def mostrar_mensaje(mensajes):
-    # print(f"\n\n{'#'*(len(mensaje)+8)}\n### {mensaje} ###\n{'#'*(len(mensaje)+8)}\n")
+def mostrar_mensaje(mensajes,maximo_caracteres=50):
     if len(mensajes)>0:
         
         #creo nueva lista de mensaje, evitando los saltos de linea que puedan tener los mensajes
@@ -210,9 +209,7 @@ def mostrar_mensaje(mensajes):
         else:
             mensajes_ordenados = mensajes.split('\n')
         
-        largo = 0
-        for linea in mensajes_ordenados:
-            if len(linea)> largo:largo = len(linea)
+        largo = max(len(mensaje) for mensaje in mensajes)
         
         mensaje_final += f"{'#'*(largo+6)}\n"
         
